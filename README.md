@@ -14,6 +14,7 @@ You must be on a 64-bit Linux machine (it will not work on a VM, I don't think).
 * clone repo into IdeaProjects
 
 In one terminal:
+
     sudo apt-get install libtool build-essential pkg-config automake default-jdk maven glusterfs-common
     export JAVA_HOME=/usr/lib/jvm/default-java
     cd ~/IdeaProjects/Java-GlusterFS/glusterfs-java-filesystem
@@ -34,6 +35,7 @@ In one terminal:
     su vagrant
 
 In another terminal:
+
     cd /home/{name}/IDEA/IdeaProjects/Java-GlusterFS/libgfapi-jni
     mvn -P download install
     mvn -P linux64 clean install
