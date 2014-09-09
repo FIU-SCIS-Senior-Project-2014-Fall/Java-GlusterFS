@@ -31,8 +31,8 @@ public class Example {
     public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
         System.out.println(getProvider("gluster").toString());
 
-        String vagrantBox = "172.31.31.31";
-
+        //String vagrantBox = "172.31.31.31";
+        String vagrantBox = "127.0.0.1";
         String mountUri = "gluster://" + vagrantBox + ":foo/";
         String testUri = "gluster://" + vagrantBox + ":foo/baz";
         Path mountPath = Paths.get(new URI(mountUri));
