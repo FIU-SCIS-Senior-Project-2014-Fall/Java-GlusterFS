@@ -240,7 +240,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
         if(firstPath.equals(secondPath))
             return true;
-        else if(!firstPath.getFileSystem().provider().equals(secondPath.getFileSystem().provider()))
+        else if(!path.getFileSystem().provider().equals(path2.getFileSystem().provider()))
             return false;
         else
         {
