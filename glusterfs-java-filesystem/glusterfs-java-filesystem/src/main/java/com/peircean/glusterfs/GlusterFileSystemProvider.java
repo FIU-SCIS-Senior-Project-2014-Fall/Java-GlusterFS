@@ -235,10 +235,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
     @Override
     public boolean isSameFile(Path path, Path path2) throws IOException {
 
-        GlusterPath firstPath = (GlusterPath)path;
-        GlusterPath secondPath = (GlusterPath)path2;
-
-        if(firstPath.equals(secondPath))
+        if(path.equals(path2))
             return true;
         else if(!path.getFileSystem().provider().equals(path2.getFileSystem().provider()))
             return false;
@@ -246,8 +243,8 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         {
             stat stat1 = new stat();
             stat stat2 = new stat();
-            GLFS.glfs_stat(firstPath.getFileSystem().getVolptr(), firstPath.getString(), stat1);
-            GLFS.glfs_stat(secondPath.getFileSystem().getVolptr(), secondPath.getString(), stat2);
+            GLFS.glfs_stat(((GlusterFileSystem)path.getFileSystem()).getVolptr(), ((GlusterPath)path).getString(), stat1);
+            GLFS.glfs_stat(((GlusterFileSystem)path2.getFileSystem()).getVolptr(), ((GlusterPath)path2).getString(), stat2);
 
             return stat1.st_ino == stat2.st_ino;
         }
