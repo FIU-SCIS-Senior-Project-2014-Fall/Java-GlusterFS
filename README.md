@@ -41,4 +41,5 @@ In another terminal:
     mvn -P linux64 clean install
     cd ../glusterfs-java-filesystem
     mvn clean install
+    cd gluster-java-filesystem-example
     mvn exec:exec
