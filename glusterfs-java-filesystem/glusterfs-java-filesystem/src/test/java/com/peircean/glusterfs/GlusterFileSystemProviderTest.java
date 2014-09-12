@@ -654,4 +654,49 @@ public class GlusterFileSystemProviderTest extends TestCase {
         verifyStatic();
         Files.isDirectory(mockPath);
     }
+
+/*
+    @Test
+    public void testIsSameFile_whenPathsEqual() throws IOException {
+        GlusterPath glusterPath = new GlusterPath(mockFileSystem, );
+        boolean ret = provider.isSameFile(glusterPath, glusterPath);
+        assertTrue(ret);
+    }
+
+    @Test
+    public void testIsSameFile_whenProvidersDiffer(){
+
+    }
+
+    @Test(expected = NoSuchFileException.class)
+    public void testIsSameFile_whenNoFirstPath() throws IOException{
+        Path noPath = mockPath.resolveSibling("noPath");
+        mockStatic(Files.class);
+        when(Files.exists(noPath)).thenReturn(false);
+        provider.isSameFile(noPath, mockPath);
+        verifyStatic();
+        Files.exists(mockPath);
+    }
+
+    @Test(expected = NoSuchFileException.class)
+    public void testIsSameFile_whenNoSecondPath() throws IOException{
+
+    }
+
+    @Test
+    public void testIsSameFile_whenCopy(){
+
+    }
+
+    @Test
+    public void testIsSameFile_whenHardLink(){
+
+    }
+
+    @Test
+    public void testIsSameFile_whenSymLink(){
+
+    }
+*/
+
 }
