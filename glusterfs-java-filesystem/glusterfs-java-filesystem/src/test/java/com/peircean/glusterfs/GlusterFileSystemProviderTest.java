@@ -655,48 +655,130 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Files.isDirectory(mockPath);
     }
 
-/*
+
     @Test
     public void testIsSameFile_whenPathsEqual() throws IOException {
-        GlusterPath glusterPath = new GlusterPath(mockFileSystem, );
-        boolean ret = provider.isSameFile(glusterPath, glusterPath);
+        doReturn("/").when(mockFileSystem).getSeparator();
+        GlusterPath path1 = new GlusterPath(mockFileSystem, "/foo/bar");
+        GlusterPath path2 = new GlusterPath(mockFileSystem, "/foo/bar");
+
+        boolean ret = provider.isSameFile(path1, path2);
+
         assertTrue(ret);
+        verify(mockFileSystem, times(6)).getSeparator();
     }
 
     @Test
-    public void testIsSameFile_whenProvidersDiffer(){
+    public void testIsSameFile_whenProvidersDiffer() throws IOException {
+        GlusterPath path = Mockito.mock(GlusterPath.class);
+        doReturn(mockFileSystem).when(mockPath).getFileSystem();
+        doReturn(differentMockFileSystem).when(path).getFileSystem();
 
+        boolean ret = provider.isSameFile(mockPath, path);
+
+        assertFalse(ret);
+        verify(mockPath).getFileSystem();
+        verify(path).getFileSystem();
     }
 
     @Test(expected = NoSuchFileException.class)
     public void testIsSameFile_whenNoFirstPath() throws IOException{
-        Path noPath = mockPath.resolveSibling("noPath");
         mockStatic(Files.class);
-        when(Files.exists(noPath)).thenReturn(false);
-        provider.isSameFile(noPath, mockPath);
+        when(Files.exists(mockPath)).thenReturn(false);
+
+        long volptr = 1234l;
+        GlusterFileSystem fs = new GlusterFileSystem(provider, SERVER, VOLNAME, volptr);
+        GlusterPath path = Mockito.mock(GlusterPath.class);
+        doReturn(fs).when(mockPath).getFileSystem();
+        doReturn(fs).when(path).getFileSystem();
+
+        provider.isSameFile(mockPath, path);
+
+        verify(mockPath).getFileSystem();
+        verify(path).getFileSystem();
         verifyStatic();
         Files.exists(mockPath);
     }
 
     @Test(expected = NoSuchFileException.class)
     public void testIsSameFile_whenNoSecondPath() throws IOException{
+        mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(false);
 
+        long volptr = 1234l;
+        GlusterFileSystem fs = new GlusterFileSystem(provider, SERVER, VOLNAME, volptr);
+        GlusterPath path = Mockito.mock(GlusterPath.class);
+        doReturn(fs).when(mockPath).getFileSystem();
+        doReturn(fs).when(path).getFileSystem();
+
+        provider.isSameFile(path, mockPath);
+
+        verify(mockPath).getFileSystem();
+        verify(path).getFileSystem();
+        verifyStatic();
+        Files.exists(mockPath);
     }
 
     @Test
-    public void testIsSameFile_whenCopy(){
-
+    public void testIsSameFile_whenCopy() throws Exception {
+        //in the case of a copy of a file
+        //different file paths and different inode numbers (asserting false)
+        testIsSameFile_helper("/foo/bar", "/foo/copy", 2335l, 3567l, false);
     }
 
     @Test
-    public void testIsSameFile_whenHardLink(){
-
+    public void testIsSameFile_whenLinks() throws Exception {
+        //in the case of hardlinks and symlinks
+        //different file paths and identical inode numbers (asserting true)
+        testIsSameFile_helper("/foo/bar", "/foo/copy", 2345l, 2345l, true);
     }
 
     @Test
-    public void testIsSameFile_whenSymLink(){
+    public void testIsSameFile_helper(String file1, String file2, long ino1, long ino2, boolean assertion) throws Exception {
+        long volptr = 1234l;
+        String path1 = file1;
+        String path2 = file2;
 
+        GlusterPath glusterPath = Mockito.mock(GlusterPath.class);
+        GlusterFileSystem fs = new GlusterFileSystem(provider, SERVER, VOLNAME, volptr);
+
+        doReturn(fs).when(glusterPath).getFileSystem();
+        doReturn(fs).when(mockPath).getFileSystem();
+        // doReturn(volptr).when(fs).getVolptr();
+        doReturn(path1).when(glusterPath).getString();
+        doReturn(path2).when(mockPath).getString();
+        mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(true);
+        when(Files.exists(glusterPath)).thenReturn(true);
+
+        stat stat1 = new stat();
+        stat1.st_ino = ino1;
+
+        stat stat2 = new stat();
+        stat2.st_ino = ino2;
+        whenNew(stat.class).withNoArguments().thenReturn(stat1, stat2);
+
+        mockStatic(GLFS.class);
+        when(GLFS.glfs_stat(volptr, path1, stat1)).thenReturn(0);
+        when(GLFS.glfs_stat(volptr, path2, stat2)).thenReturn(0);
+
+        boolean ret = provider.isSameFile(glusterPath, mockPath);
+
+        if (assertion) assertTrue(ret);
+        else assertFalse(ret);
+
+        verify(glusterPath, times(2)).getFileSystem();
+        verify(mockPath, times(2)).getFileSystem();
+        //  verify(fs, times(2)).getVolptr();
+        verify(glusterPath).getString();
+        verify(mockPath).getString();
+
+        verifyNew(stat.class, times(2)).withNoArguments();
+
+        verifyStatic();
+        GLFS.glfs_stat(volptr, path1, stat1);
+        GLFS.glfs_stat(volptr, path2, stat2);
+        Files.exists(mockPath);
+        Files.exists(glusterPath);
     }
-*/
-
 }
