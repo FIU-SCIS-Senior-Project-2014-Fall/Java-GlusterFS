@@ -247,8 +247,8 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         {
             stat stat1 = new stat();
             stat stat2 = new stat();
-            GLFS.glfs_lstat(((GlusterFileSystem)path.getFileSystem()).getVolptr(), ((GlusterPath)path).getString(), stat1);
-            GLFS.glfs_lstat(((GlusterFileSystem)path2.getFileSystem()).getVolptr(), ((GlusterPath)path2).getString(), stat2);
+            GLFS.glfs_stat(((GlusterFileSystem)path.getFileSystem()).getVolptr(), ((GlusterPath)path).getString(), stat1);
+            GLFS.glfs_stat(((GlusterFileSystem)path2.getFileSystem()).getVolptr(), ((GlusterPath)path2).getString(), stat2);
 
             return stat1.st_ino == stat2.st_ino;
         }
