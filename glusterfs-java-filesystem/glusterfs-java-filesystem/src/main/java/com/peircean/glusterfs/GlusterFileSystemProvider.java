@@ -6,7 +6,6 @@ import com.peircean.libgfapi_jni.internal.structs.statvfs;
 import lombok.AccessLevel;
 import lombok.Getter;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.FileChannel;
