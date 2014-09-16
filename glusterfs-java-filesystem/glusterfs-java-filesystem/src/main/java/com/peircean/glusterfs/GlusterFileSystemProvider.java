@@ -6,6 +6,7 @@ import com.peircean.libgfapi_jni.internal.structs.statvfs;
 import lombok.AccessLevel;
 import lombok.Getter;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.nio.channels.FileChannel;
@@ -239,12 +240,16 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
             return true;
         else if(!path.getFileSystem().provider().equals(path2.getFileSystem().provider()))
             return false;
+        else if(!Files.exists(path))
+            throw new NoSuchFileException(path.toString());
+        else if(!Files.exists(path2))
+            throw new NoSuchFileException(path2.toString());
         else
         {
             stat stat1 = new stat();
             stat stat2 = new stat();
-            GLFS.glfs_stat(((GlusterFileSystem)path.getFileSystem()).getVolptr(), ((GlusterPath)path).getString(), stat1);
-            GLFS.glfs_stat(((GlusterFileSystem)path2.getFileSystem()).getVolptr(), ((GlusterPath)path2).getString(), stat2);
+            GLFS.glfs_lstat(((GlusterFileSystem)path.getFileSystem()).getVolptr(), ((GlusterPath)path).getString(), stat1);
+            GLFS.glfs_lstat(((GlusterFileSystem)path2.getFileSystem()).getVolptr(), ((GlusterPath)path2).getString(), stat2);
 
             return stat1.st_ino == stat2.st_ino;
         }
