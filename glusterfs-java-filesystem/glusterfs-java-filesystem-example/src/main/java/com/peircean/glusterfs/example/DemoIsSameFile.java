@@ -10,7 +10,7 @@ import java.nio.file.Paths;
 /**
  * Created by ian on 9/15/14.
  */
-public class Test
+public class DemoIsSameFile
 {
     public static void main(String[] args) throws URISyntaxException, IOException
     {
