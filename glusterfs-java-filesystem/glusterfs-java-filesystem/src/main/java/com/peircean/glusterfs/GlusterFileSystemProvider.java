@@ -237,7 +237,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
         if(path.equals(path2))
             return true;
-        else if(!path.getFileSystem().provider().equals(path2.getFileSystem().provider()))
+        else if(!path.getFileSystem().equals(path2.getFileSystem())) //if file system differs, then we don't need to check provider; we know the files differ
             return false;
         else if(!Files.exists(path))
             throw new NoSuchFileException(path.toString());
