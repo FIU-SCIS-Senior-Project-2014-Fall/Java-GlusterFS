@@ -245,9 +245,12 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public FileStore getFileStore(Path path) throws IOException {
-        if(Files.exists(path))
+        if(Files.exists(path)){
             return path.getFileSystem().getFileStores().iterator().next();
-        else throw new FileNotFoundException(path.toString());
+        }
+        else {
+            throw new FileNotFoundException(path.toString());
+        }
     }
 
     @Override
