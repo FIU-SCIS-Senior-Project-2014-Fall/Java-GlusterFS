@@ -657,7 +657,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
 
     @Test
-    public void testIsSameFile_whenPathsEqual() throws IOException {
+    public void testIsSameFile_whenSamePath() throws IOException {
         doReturn("/").when(mockFileSystem).getSeparator();
         GlusterPath path1 = new GlusterPath(mockFileSystem, "/foo/bar");
         GlusterPath path2 = new GlusterPath(mockFileSystem, "/foo/bar");
