@@ -234,7 +234,34 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public boolean isSameFile(Path path, Path path2) throws IOException {
-        return false;
+
+        if(path.equals(path2)) {
+            return true;
+        }
+        else if(!path.getFileSystem().equals(path2.getFileSystem())) { //if file system differs, then we don't need to check provider; we know the files differ
+            return false;
+        }
+        else if(!Files.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        }
+        else if(!Files.exists(path2)) {
+            throw new NoSuchFileException(path2.toString());
+        }
+        else {
+            stat stat1 = new stat();
+            stat stat2 = new stat();
+            int ret1 = GLFS.glfs_stat(((GlusterFileSystem)path.getFileSystem()).getVolptr(),
+                                      ((GlusterPath)path).getString(), stat1);
+            int ret2 = GLFS.glfs_stat(((GlusterFileSystem)path2.getFileSystem()).getVolptr(),
+                                      ((GlusterPath)path2).getString(), stat2);
+
+            if(ret1 < 0 || ret2 < 0) {
+                throw new IOException();
+            }
+            else {
+                return stat1.st_ino == stat2.st_ino;
+            }
+        }
     }
 
     @Override
