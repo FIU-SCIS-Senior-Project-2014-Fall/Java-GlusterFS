@@ -656,7 +656,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
     }
 
     @Test
-    public void testGetFileStore_whenFileExists() throws IOException{
+    public void testGetFileStore_whenFileExists() throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(true);
         doReturn(mockFileSystem).when(mockPath).getFileSystem();
@@ -678,7 +678,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
     }
 
     @Test(expected = FileNotFoundException.class)
-    public void testGetFileStore_whenFileDoesNotExist()throws IOException{
+    public void testGetFileStore_whenFileDoesNotExist() throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(false);
         provider.getFileStore(mockPath);
