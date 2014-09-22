@@ -657,7 +657,18 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
 
     @Test
-    public void testIsSameFile_whenSamePath() throws IOException {
+    public void testIsSameFile_whenSamePaths() throws IOException {
+        doReturn("/").when(mockFileSystem).getSeparator();
+        GlusterPath path = new GlusterPath(mockFileSystem, "/foo/bar");
+
+        boolean ret = provider.isSameFile(path, path);
+
+        assertTrue(ret);
+        verify(mockFileSystem, times(3)).getSeparator();
+    }
+
+    @Test
+    public void testIsSameFile_whenPathsEqual() throws IOException {
         doReturn("/").when(mockFileSystem).getSeparator();
         GlusterPath path1 = new GlusterPath(mockFileSystem, "/foo/bar");
         GlusterPath path2 = new GlusterPath(mockFileSystem, "/foo/bar");
@@ -682,7 +693,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
     }
 
     @Test(expected = NoSuchFileException.class)
-    public void testIsSameFile_whenOnlySecondPathExists() throws IOException{
+    public void testIsSameFile_whenOnlySecondPathExists() throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(false);
 
@@ -701,7 +712,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
     }
 
     @Test(expected = NoSuchFileException.class)
-    public void testIsSameFile_whenOnlyFirstPathExists() throws IOException{
+    public void testIsSameFile_whenOnlyFirstPathExists() throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(false);
 
@@ -761,10 +772,9 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         boolean ret = provider.isSameFile(glusterPath, mockPath);
 
-        if (assertion){
+        if (assertion) {
             assertTrue(ret);
-        }
-        else {
+        } else {
             assertFalse(ret);
         }
 
