@@ -820,6 +820,6 @@ public class GlusterFileSystemProviderTest extends TestCase {
         verifyStatic();
         GLFS.glfs_stat(volptr, pathString, stat);
         
-        verifyNew(stat.getClass()).withNoArguments();
+        verifyNew(stat.class).withNoArguments();
     }
 }
