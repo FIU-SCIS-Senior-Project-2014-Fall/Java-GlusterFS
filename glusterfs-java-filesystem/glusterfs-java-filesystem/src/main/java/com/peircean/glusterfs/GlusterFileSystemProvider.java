@@ -253,11 +253,14 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
             int ret2 = GLFS.glfs_stat(((GlusterFileSystem) path2.getFileSystem()).getVolptr(),
                     ((GlusterPath) path2).getString(), stat2);
 
-            if (ret1 < 0 || ret2 < 0) {
-                throw new IOException();
-            } else {
-                return stat1.st_ino == stat2.st_ino;
+            if (ret1 < 0) {
+                throw new IOException(path.toString());
             }
+            if (ret2 < 0) {
+                throw new IOException(path2.toString());
+            }
+
+            return stat1.st_ino == stat2.st_ino;
         }
     }
 
