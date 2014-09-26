@@ -64,6 +64,33 @@ public class GlusterFileAttributes implements PosixFileAttributes {
         return permissions;
     }
 
+    /*
+     * Potential solution for parseattrs. It retains its previous behavior allowing
+     * GlusterFileChannel to still utilize it, but it also includes the requisite
+     * behavior for its use in methods like createDirectory. This method feels roundabout
+     * but the only alternative that we could see involves the swapping of the keySet
+     * and values for the perms map, which would interfere with the way the permissions
+     * method above works, requiring us to rewrite how that works to match how our
+     * implementation for parseAttrs currently.
+     * */
+    public static int parseAttrs(FileAttribute<?>... attrs) {
+        int mode = 0;
+        for (FileAttribute a : attrs) {
+            for (PosixFilePermission p : (Set<PosixFilePermission>) a.value()) {
+                for(Map.Entry<Integer, PosixFilePermission> entry : perms.entrySet()) {
+                    if(entry.getValue() == p) {
+                        mode |= entry.getKey();
+                        break;
+                    }
+                }
+                /*if (perms.keySet().contains(p)) {
+                    mode |= perms.get(p);
+                }*/
+            }
+        }
+        return mode;
+    }
+
     @Override
     public FileTime lastModifiedTime() {
         return FileTime.fromMillis(mtime * 1000);

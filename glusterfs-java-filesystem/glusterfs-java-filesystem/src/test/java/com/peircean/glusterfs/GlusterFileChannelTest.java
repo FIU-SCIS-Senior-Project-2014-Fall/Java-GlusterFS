@@ -100,7 +100,9 @@ public class GlusterFileChannelTest extends TestCase {
 		doReturn(volptr).when(mockFileSystem).getVolptr();
 		doReturn(pathUri).when(mockPath).toUri();
 		doReturn(flags).when(channel).parseOptions(options);
-		doReturn(mode).when(channel).parseAttrs(attrs);
+        //removed doReturn(mode).when(channel).parseAttrs(attrs);
+        //and verify below do to refactoring of that method into
+        //GlusterFileAttributes as a static method
 
 		PowerMockito.mockStatic(GLFS.class);
 		if (null != option) {
@@ -119,7 +121,6 @@ public class GlusterFileChannelTest extends TestCase {
 		verify(mockFileSystem).getVolptr();
 		verify(mockPath).toUri();
 		verify(channel).parseOptions(options);
-		verify(channel).parseAttrs(attrs);
 
 		if (null != option) {
 			PowerMockito.verifyStatic();
@@ -139,14 +140,6 @@ public class GlusterFileChannelTest extends TestCase {
 		int result = channel.parseOptions(options);
 
 		assertEquals(GlusterOpenOption.O_RDWR | GlusterOpenOption.O_APPEND, result);
-	}
-
-	@Test
-	public void testParseAttributes() {
-		Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxrwxrwx");
-		FileAttribute<Set<PosixFilePermission>> attribute = PosixFilePermissions.asFileAttribute(permissions);
-		int mode = channel.parseAttrs(attribute);
-		assertEquals(0777, mode);
 	}
 
 	@Test
