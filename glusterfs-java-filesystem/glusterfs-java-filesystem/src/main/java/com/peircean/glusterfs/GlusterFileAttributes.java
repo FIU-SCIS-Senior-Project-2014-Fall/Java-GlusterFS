@@ -65,9 +65,7 @@ public class GlusterFileAttributes implements PosixFileAttributes {
     }
 
     /*
-     * Potential solution for parseattrs. It retains its previous behavior allowing
-     * GlusterFileChannel to still utilize it, but it also includes the requisite
-     * behavior for its use in methods like createDirectory. This method feels roundabout
+     * Potential solution for parseattrs. This method feels roundabout
      * but the only alternative that we could see involves the swapping of the keySet
      * and values for the perms map, which would interfere with the way the permissions
      * method above works, requiring us to rewrite how that works to match how our
