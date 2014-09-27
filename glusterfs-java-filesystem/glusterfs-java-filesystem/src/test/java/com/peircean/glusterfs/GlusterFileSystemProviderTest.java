@@ -677,12 +677,10 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Files.exists(mockPath);
     }
 
-    @Test(expected = FileNotFoundException.class)
+    @Test(expected = NoSuchFileException.class)
     public void testGetFileStore_whenFileDoesNotExist() throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(false);
         provider.getFileStore(mockPath);
-        verifyStatic();
-        Files.exists(mockPath);
     }
 }
