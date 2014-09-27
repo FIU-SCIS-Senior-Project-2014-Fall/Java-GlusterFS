@@ -156,14 +156,16 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if(!Files.exists(path.getParent())) {
             throw new IOException();
         }
-        /*
+/*
+
         int mode = GlusterFileAttributes.parseAttrs(fileAttributes);
-        int ret = GLFS.glfs_mkdir(path.getFileSystem(), path.toString(), mode);
+        int ret = GLFS.glfs_mkdir(((GlusterFileSystem)path.getFileSystem()).getVolptr(), path.toString(), mode);
 
         if(ret < 0) {
             throw new IOException(path.toString());
         }
-        */
+*/
+
     }
 
     @Override

@@ -52,7 +52,7 @@ public class GLFSTest {
     public static final String PATH_RENAMED = "bar2";
     public static final String HELLO_ = "hello ";
     public static final String WORLD = "world";
-    public static final String DIR_PATH = "/baz";
+    public static final String DIR_PATH = "/baz/";
     private long vol;
     private long file;
     private long dir;
