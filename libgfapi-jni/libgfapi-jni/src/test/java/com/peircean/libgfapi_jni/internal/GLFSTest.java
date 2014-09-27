@@ -52,6 +52,7 @@ public class GLFSTest {
     public static final String PATH_RENAMED = "bar2";
     public static final String HELLO_ = "hello ";
     public static final String WORLD = "world";
+    public static final String DIR_PATH = "/baz";
     private long vol;
     private long file;
     private long dir;
@@ -261,8 +262,15 @@ public class GLFSTest {
     }
 
     @Test(dependsOnMethods = "testAccess")
+    public void testMkdir() {
+        int ret = glfs_mkdir(vol, DIR_PATH, 0777);
+        System.out.println("CREATE STATUS: " + ret);
+        assertEquals(0, ret);
+    }
+
+    @Test(dependsOnMethods = "testMkdir")
     public void testOpendir() {
-        dir = glfs_opendir(vol, "/");
+        dir = glfs_opendir(vol, DIR_PATH);
         System.out.println("OPENDIR: " + dir);
         assertTrue(dir > 0);
     }

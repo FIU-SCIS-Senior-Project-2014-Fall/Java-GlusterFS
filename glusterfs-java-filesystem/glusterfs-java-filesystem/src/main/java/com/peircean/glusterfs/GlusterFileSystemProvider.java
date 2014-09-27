@@ -153,22 +153,17 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if(Files.exists(path)){
             throw new FileAlreadyExistsException(path.toString());
         }
-        else if(!Files.exists(path.getParent())) {
+        if(!Files.exists(path.getParent())) {
             throw new IOException();
         }
-        else{
-            /*
-            fileattribute mode;
-            for(FileAttribute attr : fileAttributes)
-            {
-                if(!attr.isAtomic())
-                    throw new UnsupportedOperationException;
-                else
-                    mode += attr;
-            }
-            GLFS.glfs_mkdir(path.getFileSystem(), path.toString(), mode);
-             */
+        /*
+        int mode = GlusterFileAttributes.parseAttrs(fileAttributes);
+        int ret = GLFS.glfs_mkdir(path.getFileSystem(), path.toString(), mode);
+
+        if(ret < 0) {
+            throw new IOException(path.toString());
         }
+        */
     }
 
     @Override
