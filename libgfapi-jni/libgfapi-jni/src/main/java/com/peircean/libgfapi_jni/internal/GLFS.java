@@ -171,7 +171,7 @@ public class GLFS {
     );
 
     //    int glfs_mkdir(glfs_t *fs, const char *path, int mode);
-    @JniMethod(cast = "glfs_fd_t *")
+    @JniMethod
     public static final native int glfs_mkdir(
             @JniArg(cast = "glfs_t *") long fs,
             @JniArg(cast = "const char *") String path,
