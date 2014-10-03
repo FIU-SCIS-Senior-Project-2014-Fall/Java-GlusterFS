@@ -31,11 +31,12 @@ public class Example {
     public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
         System.out.println(getProvider("gluster").toString());
 
-        //String vagrantBox = "172.31.31.31";
-        String vagrantBox = "127.0.0.1";
+        String vagrantBox = "172.31.31.31";
+        //String vagrantBox = "127.0.0.1";
         String mountUri = "gluster://" + vagrantBox + ":foo/";
-        String testUri = "gluster://" + vagrantBox + ":foo/baz";
+        String testUri = "gluster://" + vagrantBox + ":foo/baz/";
         Path mountPath = Paths.get(new URI(mountUri));
+        Path dirPath = Paths.get(new URI(testUri));
 
         FileSystem fileSystem = FileSystems.newFileSystem(new URI(mountUri), null);
         FileStore store = fileSystem.getFileStores().iterator().next();
@@ -43,6 +44,8 @@ public class Example {
         System.out.println("USABLE SPACE: " + store.getUsableSpace());
         System.out.println("UNALLOCATED SPACE: " + store.getUnallocatedSpace());
         System.out.println(fileSystem.toString());
+
+        Files.createDirectory(dirPath); //doesn't see GlusterFileSystemProvider's createDirectory, so just moves along without complaint
 
         String hidden = "/foo/.bar";
         boolean isHidden = fileSystem.provider().isHidden(new GlusterPath(((GlusterFileSystem) fileSystem), hidden));
@@ -55,7 +58,7 @@ public class Example {
         Set<PosixFilePermission> posixFilePermissions = PosixFilePermissions.fromString("rw-rw-rw-");
         FileAttribute<Set<PosixFilePermission>> attrs = PosixFilePermissions.asFileAttribute(posixFilePermissions);
 
-        Path glusterPath = Paths.get(new URI(testUri));
+        Path glusterPath = Paths.get(new URI(testUri + "baz"));
         System.out.println(glusterPath.getClass());
         System.out.println(glusterPath);
         System.out.println(glusterPath.getFileSystem().toString());
