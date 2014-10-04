@@ -32,7 +32,7 @@ import static org.mockito.Mockito.*;
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({GLFS.class, GlusterFileChannel.class})
+@PrepareForTest({GLFS.class, GlusterFileChannel.class, GlusterFileAttributes.class})
 public class GlusterFileChannelTest extends TestCase {
 
 	@Mock
@@ -100,9 +100,9 @@ public class GlusterFileChannelTest extends TestCase {
 		doReturn(volptr).when(mockFileSystem).getVolptr();
 		doReturn(pathUri).when(mockPath).toUri();
 		doReturn(flags).when(channel).parseOptions(options);
-        //removed doReturn(mode).when(channel).parseAttrs(attrs);
-        //and verify below do to refactoring of that method into
-        //GlusterFileAttributes as a static method
+
+        PowerMockito.mockStatic(GlusterFileAttributes.class);
+        when(GlusterFileAttributes.parseAttrs(attrs)).thenReturn(mode);
 
 		PowerMockito.mockStatic(GLFS.class);
 		if (null != option) {
@@ -121,6 +121,9 @@ public class GlusterFileChannelTest extends TestCase {
 		verify(mockFileSystem).getVolptr();
 		verify(mockPath).toUri();
 		verify(channel).parseOptions(options);
+
+        PowerMockito.verifyStatic();
+        GlusterFileAttributes.parseAttrs(attrs);
 
 		if (null != option) {
 			PowerMockito.verifyStatic();

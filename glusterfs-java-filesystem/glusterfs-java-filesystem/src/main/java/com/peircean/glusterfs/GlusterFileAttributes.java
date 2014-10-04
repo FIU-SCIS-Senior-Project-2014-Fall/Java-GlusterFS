@@ -36,6 +36,32 @@ public class GlusterFileAttributes implements PosixFileAttributes {
                 stat.atime, stat.ctime, stat.mtime, stat.st_ino);
     }
 
+    public static int parseAttrs(FileAttribute<?>... attrs) {
+        int mode = 0;
+        for (FileAttribute a : attrs) {
+            for (PosixFilePermission p : (Set<PosixFilePermission>) a.value()) {
+
+                Integer perm = permsToMode.get(p);
+
+                if (null != perm) {
+                    mode |= perm.intValue();
+                }
+            }
+        }
+        return mode;
+    }
+
+    private static Map<PosixFilePermission, Integer> invertModeMap(Map<Integer, PosixFilePermission> modeToPerms) {
+
+        HashMap<PosixFilePermission, Integer> permsToMode = new HashMap<>();
+
+        for(Map.Entry<Integer, PosixFilePermission> entry : modeToPerms.entrySet()) {
+            permsToMode.put(entry.getValue(), entry.getKey());
+        }
+
+        return permsToMode;
+    }
+
     @Override
     public UserPrincipal owner() {
         return new UserPrincipal() {
@@ -65,18 +91,6 @@ public class GlusterFileAttributes implements PosixFileAttributes {
             }
         }
         return permissions;
-    }
-
-    public static int parseAttrs(FileAttribute<?>... attrs) {
-        int mode = 0;
-        for (FileAttribute a : attrs) {
-            for (PosixFilePermission p : (Set<PosixFilePermission>) a.value()) {
-                if (permsToMode.keySet().contains(p)) {
-                    mode |= permsToMode.get(p);
-                }
-            }
-        }
-        return mode;
     }
 
     @Override
@@ -125,16 +139,5 @@ public class GlusterFileAttributes implements PosixFileAttributes {
     @Override
     public Object fileKey() {
         return inode;
-    }
-
-    private static Map<PosixFilePermission, Integer> invertModeMap(Map<Integer, PosixFilePermission> modeToPerms) {
-
-        HashMap<PosixFilePermission, Integer> permsToMode = new HashMap<>();
-
-        for(Map.Entry<Integer, PosixFilePermission> entry : modeToPerms.entrySet()) {
-            permsToMode.put(entry.getValue(), entry.getKey());
-        }
-
-        return permsToMode;
     }
 }

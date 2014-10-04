@@ -3,6 +3,10 @@ package com.peircean.glusterfs;
 import junit.framework.TestCase;
 import com.peircean.libgfapi_jni.internal.structs.stat;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
@@ -10,6 +14,12 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
+import static org.powermock.api.mockito.PowerMockito.when;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({GlusterFileAttributes.class})
 public class GlusterFileAttributesTest extends TestCase {
 
     public static final int MODE = 0100777;
@@ -56,10 +66,16 @@ public class GlusterFileAttributesTest extends TestCase {
 
     @Test
     public void testParseAttributes() {
-        Set<PosixFilePermission> permissions = PosixFilePermissions.fromString("rwxrwxrwx");
-        FileAttribute<Set<PosixFilePermission>> attribute = PosixFilePermissions.asFileAttribute(permissions);
-        int mode = attrib.parseAttrs(attribute);
+        Set<PosixFilePermission> posixFilePermissions = PosixFilePermissions.fromString("rwxrwxrwx");
+        FileAttribute<Set<PosixFilePermission>> attrs = PosixFilePermissions.asFileAttribute(posixFilePermissions);
+
+        mockStatic(GlusterFileAttributes.class);
+        when(GlusterFileAttributes.parseAttrs(attrs)).thenReturn(0777);
+
+        int mode = GlusterFileAttributes.parseAttrs(attrs);
         assertEquals(0777, mode);
+        verifyStatic();
+        GlusterFileAttributes.parseAttrs(attrs);
     }
 
     @Test
