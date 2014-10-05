@@ -3,9 +3,6 @@ package com.peircean.glusterfs;
 import com.peircean.libgfapi_jni.internal.structs.stat;
 import junit.framework.TestCase;
 import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
 
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileTime;
@@ -13,8 +10,6 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.Set;
 
-@RunWith(PowerMockRunner.class)
-@PrepareForTest({GlusterFileAttributes.class})
 public class GlusterFileAttributesTest extends TestCase {
 
     public static final int MODE = 0100777;
