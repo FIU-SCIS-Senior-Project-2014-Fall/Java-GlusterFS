@@ -16,7 +16,6 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -29,7 +28,6 @@ import java.util.Set;
 @NoArgsConstructor(access = AccessLevel.PACKAGE)
 public class GlusterFileChannel extends FileChannel {
 	public static final Map<StandardOpenOption, Integer> optionMap = new HashMap<StandardOpenOption, Integer>();
-	public static final Map<PosixFilePermission, Integer> perms = new HashMap<PosixFilePermission, Integer>();
 
 	static {
 		optionMap.put(StandardOpenOption.APPEND, GlusterOpenOption.O_APPEND);
@@ -39,16 +37,6 @@ public class GlusterFileChannel extends FileChannel {
 		optionMap.put(StandardOpenOption.READ, GlusterOpenOption.O_RDONLY);
 		optionMap.put(StandardOpenOption.WRITE, GlusterOpenOption.O_RDWR);
 		optionMap.put(StandardOpenOption.TRUNCATE_EXISTING, GlusterOpenOption.O_TRUNC);
-
-		perms.put(PosixFilePermission.OTHERS_EXECUTE, 0001);
-		perms.put(PosixFilePermission.OTHERS_WRITE, 0002);
-		perms.put(PosixFilePermission.OTHERS_READ, 0004);
-		perms.put(PosixFilePermission.GROUP_EXECUTE, 0010);
-		perms.put(PosixFilePermission.GROUP_WRITE, 0020);
-		perms.put(PosixFilePermission.GROUP_READ, 0040);
-		perms.put(PosixFilePermission.OWNER_EXECUTE, 0100);
-		perms.put(PosixFilePermission.OWNER_WRITE, 0200);
-		perms.put(PosixFilePermission.OWNER_READ, 0400);
 	}
 
 	private GlusterFileSystem fileSystem;
@@ -68,7 +56,7 @@ public class GlusterFileChannel extends FileChannel {
 		this.options = options;
 
 		int flags = parseOptions(options);
-		int mode = parseAttrs(attrs);
+		int mode = GlusterFileAttributes.parseAttrs(attrs);
 
 		String pathString = path.toUri().getPath();
 		boolean createNew = options.contains(StandardOpenOption.CREATE_NEW);
@@ -87,18 +75,6 @@ public class GlusterFileChannel extends FileChannel {
 		if (0 >= fileptr) {
 			throw new IOException("Unable to create or open file '" + pathString + "' on volume '" + fileSystem.toString() + "'");
 		}
-	}
-
-	int parseAttrs(FileAttribute<?>... attrs) {
-		int mode = 0;
-		for (FileAttribute a : attrs) {
-			for (PosixFilePermission p : (Set<PosixFilePermission>) a.value()) {
-				if (perms.keySet().contains(p)) {
-					mode |= perms.get(p);
-				}
-			}
-		}
-		return mode;
 	}
 
 	int parseOptions(Set<? extends OpenOption> options) {
