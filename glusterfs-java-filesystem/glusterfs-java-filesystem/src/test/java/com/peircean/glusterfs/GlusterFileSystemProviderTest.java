@@ -13,7 +13,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -683,7 +682,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
         helperCreateDirectory(false);
     }
 
-    private void helperCreateDirectory(boolean directoryExists) throws IOException {
+    private void helperCreateDirectory(boolean errorHappens) throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(false);
 
@@ -699,14 +698,14 @@ public class GlusterFileSystemProviderTest extends TestCase {
         doReturn(volptr).when(mockFileSystem).getVolptr();
         mockStatic(GLFS.class);
         int ret = 0;
-        if (directoryExists) {
+        if (errorHappens) {
             ret = -1;
         }
         when(GLFS.glfs_mkdir(volptr, pathString, mode)).thenReturn(ret);
 
         provider.createDirectory(mockPath);
 
-        if (!directoryExists) {
+        if (!errorHappens) {
             verifyStatic();
             GLFS.glfs_mkdir(volptr, pathString, mode);
             Files.exists(mockPath);
