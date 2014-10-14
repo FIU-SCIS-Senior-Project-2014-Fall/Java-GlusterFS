@@ -13,7 +13,6 @@ import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -655,6 +654,67 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Files.isDirectory(mockPath);
     }
 
+    @Test(expected = FileAlreadyExistsException.class)
+    public void testCreateDirectory_whenFileOrDirectoryExists() throws IOException {
+        mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(true);
+
+        provider.createDirectory(mockPath);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateDirectory_whenParentDirectoryDoesNotExist() throws IOException {
+        mockStatic(Files.class);
+        GlusterPath parentPath = Mockito.mock(GlusterPath.class);
+        doReturn(parentPath).when(mockPath).getParent();
+        when(Files.exists(parentPath)).thenReturn(false);
+
+        provider.createDirectory(mockPath);
+    }
+
+    @Test(expected = IOException.class)
+    public void testCreateDirectory_whenCannotCreateDirectory() throws IOException {
+        helperCreateDirectory(true);
+    }
+
+    @Test
+    public void testCreateDirectory() throws IOException {
+        helperCreateDirectory(false);
+    }
+
+    private void helperCreateDirectory(boolean errorHappens) throws IOException {
+        mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(false);
+
+        GlusterPath parentPath = Mockito.mock(GlusterPath.class);
+        doReturn(parentPath).when(mockPath).getParent();
+        when(Files.exists(parentPath)).thenReturn(true);
+
+        int mode = 0775; //using default file attribute to avoid testing parseAttrs redundantly
+        long volptr = 1234L;
+        String pathString = "foo";
+        doReturn(pathString).when(mockPath).toString();
+        doReturn(mockFileSystem).when(mockPath).getFileSystem();
+        doReturn(volptr).when(mockFileSystem).getVolptr();
+        mockStatic(GLFS.class);
+        int ret = 0;
+        if (errorHappens) {
+            ret = -1;
+        }
+        when(GLFS.glfs_mkdir(volptr, pathString, mode)).thenReturn(ret);
+
+        provider.createDirectory(mockPath);
+
+        if (!errorHappens) {
+            verifyStatic();
+            GLFS.glfs_mkdir(volptr, pathString, mode);
+            Files.exists(mockPath);
+            Files.exists(parentPath);
+            verify(mockPath).getFileSystem();
+            verify(mockFileSystem).getVolptr();
+            verify(mockPath).getParent();
+        }
+    }
 
     @Test
     public void testIsSameFile_whenSamePaths() throws IOException {

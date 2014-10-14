@@ -48,8 +48,9 @@ import static org.testng.AssertJUnit.assertTrue;
  */
 public class GLFSTest {
 
-    public static final String PATH = "bar";
-    public static final String PATH_RENAMED = "bar2";
+    public static final String DIR_PATH = "/baz/";
+    public static final String FILE_PATH = DIR_PATH + "bar";
+    public static final String FILE_PATH_RENAMED = DIR_PATH + "bar2";
     public static final String HELLO_ = "hello ";
     public static final String WORLD = "world";
     private long vol;
@@ -99,8 +100,15 @@ public class GLFSTest {
     }
 
     @Test(dependsOnMethods = "testInit")
+    public void testMkdir() {
+        int ret = glfs_mkdir(vol, DIR_PATH, 0777);
+        System.out.println("CREATE STATUS: " + ret);
+        assertEquals(0, ret);
+    }
+
+    @Test(dependsOnMethods = "testMkdir")
     public void testOpen_nonExisting() {
-        file = glfs_open(vol, PATH, 0);
+        file = glfs_open(vol, FILE_PATH, 0);
         System.out.println("OPEN: " + file);
         int errno = UtilJNI.errno();
         System.out.println("ERRNO: " + errno);
@@ -115,7 +123,7 @@ public class GLFSTest {
     public void testCreate() {
         int flags = GlusterOpenOption.READWRITE().createNew().getValue();
         System.out.println("OPENEx flags: " + Integer.toOctalString(flags));
-        file = glfs_creat(vol, PATH, flags, 0666);
+        file = glfs_creat(vol, FILE_PATH, flags, 0666);
         System.out.println("CREAT: " + file);
         assertTrue(file > 0);
     }
@@ -141,7 +149,7 @@ public class GLFSTest {
     public void testOpen_existing() {
         int flags = GlusterOpenOption.READWRITE().append().getValue();
         System.out.println("OPENEx flags: " + Integer.toOctalString(flags));
-        file = glfs_open(vol, PATH, flags);
+        file = glfs_open(vol, FILE_PATH, flags);
         System.out.println("OPENEx: " + file);
         assertTrue(0 < file);
     }
@@ -181,9 +189,9 @@ public class GLFSTest {
     @Test(dependsOnMethods = "testRead")
     public void testStats() {
         stat stat = new stat();
-        int statR = GLFS.glfs_stat(vol, PATH, stat);
+        int statR = GLFS.glfs_stat(vol, FILE_PATH, stat);
         stat lstat = new stat();
-        int lstatR = GLFS.glfs_lstat(vol, PATH, lstat);
+        int lstatR = GLFS.glfs_lstat(vol, FILE_PATH, lstat);
         stat fstat = new stat();
         int fstatR = GLFS.glfs_fstat(file, fstat);
 
@@ -233,7 +241,7 @@ public class GLFSTest {
 
     @Test(dependsOnMethods = "testClose")
     public void testAccess() {
-        int acc = glfs_access(vol, PATH, 0777);
+        int acc = glfs_access(vol, FILE_PATH, 0777);
         System.out.println("ACCESS 777: " + acc);
         int errno = UtilJNI.errno();
         System.out.println("ERRNO: " + errno);
@@ -242,10 +250,10 @@ public class GLFSTest {
         assertEquals(-1, acc);
         assertEquals("Permission denied", strerror);
         assertEquals(13, errno);
-        acc = glfs_access(vol, PATH, 0666);
+        acc = glfs_access(vol, FILE_PATH, 0666);
         System.out.println("ACCESS 666: " + acc);
         assertEquals(0, acc);
-        acc = glfs_access(vol, PATH, 0444);
+        acc = glfs_access(vol, FILE_PATH, 0444);
         System.out.println("ACCESS 444: " + acc);
         assertEquals(0, acc);
         acc = glfs_access(vol, "/au4fh93hf293fa", 0444);
@@ -262,7 +270,7 @@ public class GLFSTest {
 
     @Test(dependsOnMethods = "testAccess")
     public void testOpendir() {
-        dir = glfs_opendir(vol, "/");
+        dir = glfs_opendir(vol, DIR_PATH);
         System.out.println("OPENDIR: " + dir);
         assertTrue(dir > 0);
     }
@@ -312,14 +320,14 @@ public class GLFSTest {
 
     @Test(dependsOnMethods = "testClosedir")
     public void testRename() {
-        int rename = glfs_rename(vol, PATH, PATH_RENAMED);
+        int rename = glfs_rename(vol, FILE_PATH, FILE_PATH_RENAMED);
         System.out.println("RENAME: " + rename);
         assertEquals(0, rename);
     }
 
     @Test(dependsOnMethods = "testRename")
     public void testUnlink() {
-        int unl = glfs_unlink(vol, PATH_RENAMED);
+        int unl = glfs_unlink(vol, FILE_PATH_RENAMED);
         System.out.println("UNLINK: " + unl);
         assertEquals(0, unl);
     }
@@ -343,5 +351,4 @@ public class GLFSTest {
         System.out.println("FINI: " + fini);
         assertEquals(0, fini);
     }
-
 }
