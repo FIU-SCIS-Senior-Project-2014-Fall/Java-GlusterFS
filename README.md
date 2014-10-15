@@ -1,3 +1,5 @@
+#Setting Up
+
 You must be on a 64-bit Linux machine (it will not work on a VM, I don't think). Your CPU MUST have 64-bit virtualization technology and that must be enabled in the BIOS.
 
 * go to virtualbox.org and download latest
@@ -43,3 +45,7 @@ In another terminal:
     mvn clean install
     cd gluster-java-filesystem-example
     mvn exec:exec
+
+##Concerns
+
+* If no permissions are specified, creation of a directory will default to rwxrwxr-x. The default behavior is concerned with the umask and changes the default permission set based on the formula 0777 & ~umask. We don't feel this is an imperative difference in behavior, so we are leaving it a a potential to do later.
