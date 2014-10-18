@@ -221,8 +221,16 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     }
 
-    boolean directoryIsEmpty(Path path) {
-        return false;  //To change body of created methods use File | Settings | File Templates.
+    boolean directoryIsEmpty(Path path) throws IOException {
+        DirectoryStream<Path> stream = newDirectoryStream(path, null);
+
+        if(stream.iterator().hasNext()) {
+            stream.close();
+            return false;
+        }
+
+        stream.close();
+        return true;
     }
 
     @Override
