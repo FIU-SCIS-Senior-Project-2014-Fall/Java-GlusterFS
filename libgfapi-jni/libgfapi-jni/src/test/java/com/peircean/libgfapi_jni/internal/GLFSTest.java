@@ -346,6 +346,13 @@ public class GLFSTest {
     }
 
     @Test(dependsOnMethods = "testUnlink_NonExisting")
+    public void testRmdir() {
+        int ret = glfs_rmdir(vol, DIR_PATH);
+        System.out.println("REMOVE STATUS: " + ret);
+        assertEquals(0, ret);
+    }
+
+    @Test(dependsOnMethods = "testRmdir")
     public void testFini() {
         int fini = glfs_fini(vol);
         System.out.println("FINI: " + fini);
