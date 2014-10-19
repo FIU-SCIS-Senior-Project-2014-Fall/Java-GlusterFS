@@ -222,15 +222,14 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
     }
 
     boolean directoryIsEmpty(Path path) throws IOException {
-        DirectoryStream<Path> stream = newDirectoryStream(path, null);
+        try (DirectoryStream<Path> stream = newDirectoryStream(path, null)) {
 
-        if(stream.iterator().hasNext()) {
-            stream.close();
-            return false;
+            if (stream.iterator().hasNext()) {
+                return false;
+            }
+
+            return true;
         }
-
-        stream.close();
-        return true;
     }
 
     @Override
