@@ -13,6 +13,15 @@ import java.nio.file.spi.FileSystemProvider;
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
  */
 public class Example {
+    public static FileSystemProvider getProvider(String scheme) {
+        for (FileSystemProvider fsp : FileSystemProvider.installedProviders()) {
+            if (fsp.getScheme().equals(scheme)) {
+                return fsp;
+            }
+        }
+        throw new IllegalArgumentException("No provider found for scheme: " + scheme);
+    }
+
     public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
 
         String glusterIP = "172.31.31.31";
@@ -38,7 +47,7 @@ public class Example {
                 "\nThis will fail because we just created it.");
         try {
             Files.createDirectory(dirPath);
-        } catch(FileAlreadyExistsException e) {
+        } catch (FileAlreadyExistsException e) {
             System.out.println("Failed to create directory: already exists. Good!");
         }
 
