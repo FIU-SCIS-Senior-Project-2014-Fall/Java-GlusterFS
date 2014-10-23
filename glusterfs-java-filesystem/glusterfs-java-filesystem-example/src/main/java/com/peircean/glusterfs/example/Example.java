@@ -8,6 +8,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
+import java.util.Properties;
 
 /**
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
@@ -23,10 +24,13 @@ public class Example {
     }
 
     public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
+        Properties properties = new Properties();
+        properties.load(Example.class.getClassLoader().getResourceAsStream("example.properties"));
 
-        String glusterIP = "172.31.31.31";
+        String glusterIP = properties.getProperty("glusterfs.server");
+        String volname = properties.getProperty("glusterfs.volume");
 
-        String mountStr = "gluster://" + glusterIP + ":foo/";
+        String mountStr = "gluster://" + glusterIP + ":" +  volname + "/";
         String dirStr = mountStr + "baz/";
         String barStr = mountStr + "bar";
         String fooStr = mountStr + "foo";
