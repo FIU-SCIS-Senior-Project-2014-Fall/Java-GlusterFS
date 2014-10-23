@@ -708,7 +708,9 @@ public class GlusterFileSystemProviderTest extends TestCase {
         if (!errorHappens) {
             verifyStatic();
             GLFS.glfs_mkdir(volptr, pathString, mode);
+            verifyStatic();
             Files.exists(mockPath);
+            verifyStatic();
             Files.exists(parentPath);
             verify(mockPath).getFileSystem();
             verify(mockFileSystem).getVolptr();
@@ -835,6 +837,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verifyStatic();
         Files.exists(mockPath);
+        verifyStatic();
         Files.exists(glusterPath);
     }
     
