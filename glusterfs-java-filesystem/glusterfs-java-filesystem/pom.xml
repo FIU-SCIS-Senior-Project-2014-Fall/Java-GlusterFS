@@ -79,6 +79,7 @@
                         <artifactId>maven-clover2-plugin</artifactId>
                         <version>4.0.2</version>
                         <configuration>
+			    <licenseLocation>${clover.licenseLocation}</licenseLocation>
                             <includes>
                                 <include>**/*.java</include>
                             </includes>
