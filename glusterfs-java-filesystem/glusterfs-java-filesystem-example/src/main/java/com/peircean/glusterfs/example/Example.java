@@ -44,8 +44,15 @@ public class Example {
         Path hardlinkPath = Paths.get(new URI(hardlinkStr));
         Path symlinkPath = Paths.get(new URI(symlinkStr));
 
-        System.out.println("Test of create directory:");
-        Files.createDirectory(dirPath);
+        System.out.println("May's contribution!\n");
+        System.out.println("Let's create a directory.");
+        try{
+            Files.createDirectory(dirPath);
+            System.out.println("Done.");
+        } catch (IOException e) {
+            System.out.println("Could not create directory. Something went wrong.");
+            System.exit(-1);
+        }
 
         System.out.println("Now let's try to recreate the directory." +
                 "\nThis will fail because we just created it.");
@@ -54,12 +61,6 @@ public class Example {
         } catch (FileAlreadyExistsException e) {
             System.out.println("Failed to create directory: already exists. Good!");
         }
-
-        System.out.println("Test of isSameFile:");
-        System.out.println("Is bar the same as bar? " + Files.isSameFile(barPath, barPath));
-        System.out.println("Is bar the same as foo? " + Files.isSameFile(barPath, fooPath));
-        System.out.println("Is bar the same as bar.hardlink? " + Files.isSameFile(barPath, hardlinkPath));
-        System.out.println("Is bar the same as bar.symlink? " + Files.isSameFile(barPath, symlinkPath));
 
         Path fakePath = Paths.get(new URI(fakePathStr));
         FileSystemProvider gfsp = barPath.getFileSystem().provider();
@@ -71,5 +72,12 @@ public class Example {
         } catch (IOException e) {
             System.err.println("fakePath does not exist: good!");
         }
+
+        System.out.println("Ian's contribution!\n");
+        System.out.println("Test of isSameFile:");
+        System.out.println("Is bar the same as bar? " + Files.isSameFile(barPath, barPath));
+        System.out.println("Is bar the same as foo? " + Files.isSameFile(barPath, fooPath));
+        System.out.println("Is bar the same as bar.hardlink? " + Files.isSameFile(barPath, hardlinkPath));
+        System.out.println("Is bar the same as bar.symlink? " + Files.isSameFile(barPath, symlinkPath));
     }
 }
