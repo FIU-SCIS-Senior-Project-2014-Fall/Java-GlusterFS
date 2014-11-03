@@ -45,17 +45,17 @@ public class Example {
         Path symlinkPath = Paths.get(new URI(symlinkStr));
 
         System.out.println("May's contribution!\n");
-        System.out.println("Let's create a directory.");
+        System.out.println("Let's create a directory called \"baz.\"");
         try{
             Files.createDirectory(dirPath);
-            System.out.println("Done.");
+            System.out.println("Done; that was fast.");
         } catch (IOException e) {
             System.out.println("Could not create directory. Something went wrong.");
             System.exit(-1);
         }
 
-        System.out.println("Now let's try to recreate the directory." +
-                "\nThis will fail because we just created it.");
+        System.out.println("Now let's try to recreate it." +
+                "\nThis will fail because it already exists.");
         try {
             Files.createDirectory(dirPath);
         } catch (FileAlreadyExistsException e) {
@@ -65,15 +65,17 @@ public class Example {
         Path fakePath = Paths.get(new URI(fakePathStr));
         FileSystemProvider gfsp = barPath.getFileSystem().provider();
 
+        System.out.println("Now let's get the file store for some file \"bar.\"");
         System.out.println("File store for bar in gluster provider: " + gfsp.getFileStore(barPath));
 
+        System.out.println("Let's try to get the file store for a file that doesn't exist: \"fakePath\"");
         try {
             System.out.println("File store for fakePath (this should not print): " + gfsp.getFileStore(fakePath));
         } catch (IOException e) {
             System.err.println("fakePath does not exist: good!");
         }
 
-        System.out.println("Ian's contribution!\n");
+        System.out.println("\nIan's contribution!\n");
         System.out.println("Test of isSameFile:");
         System.out.println("Is bar the same as bar? " + Files.isSameFile(barPath, barPath));
         System.out.println("Is bar the same as foo? " + Files.isSameFile(barPath, fooPath));
