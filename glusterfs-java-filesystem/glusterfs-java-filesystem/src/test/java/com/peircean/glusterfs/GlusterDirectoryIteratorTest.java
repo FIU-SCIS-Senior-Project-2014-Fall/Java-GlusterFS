@@ -85,10 +85,45 @@ public class GlusterDirectoryIteratorTest {
     }
 
     @Test
-    public void testAdvance() throws Exception {
+    public void testAdvance_whenNormalEntry() throws Exception {
+        advanceHelper(0, true);
+    }
+
+    @Test
+    public void testAdvance_skipSpecialEntryCurrent() throws Exception {
+        advanceHelper(1, true);
+    }
+
+    @Test
+    public void testAdvance_skipSpecialEntryParent() throws Exception {
+        advanceHelper(1, false);
+    }
+
+    @Test
+    public void testAdvance_skipSpecialEntryCurrentAndParent() throws Exception {
+        advanceHelper(2, true);
+    }
+
+    /*
+     * Type 0 = advancing on normal entry, so the boolean current value does not matter
+     * Type 1 = advancing on either special entry "." or "..", differentiated by boolean current
+     * Type 2 = advancing on both special entries "." and "..", so boolean current value does not matter
+     */
+    private void advanceHelper(int type, boolean current) throws Exception {
         doReturn(dirHandle).when(mockStream).getDirHandle();
         iterator.setStream(mockStream);
-        PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent).thenReturn(mockNextDirent);
+        if (0 == type) {
+            PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent);
+        }
+        if (1 == type) {
+            PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent,
+                                                                            mockCurrentDirent, mockNextDirent);
+        }
+        if (2 == type) {
+            PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent,
+                                                                            mockCurrentDirent, mockNextDirent,
+                                                                            mockCurrentDirent, mockNextDirent);
+        }
 
         long nextPtr = 4444l;
         PowerMockito.mockStatic(dirent.class);
@@ -104,23 +139,66 @@ public class GlusterDirectoryIteratorTest {
 
         Mockito.doReturn(mockPath).when(mockStream).getDir();
         String stringPath = "foo";
-        Mockito.doReturn(stringPath).when(mockCurrentDirent).getName();
-        Mockito.doReturn(fakeResultPath).when(mockPath).resolve(stringPath);
+        if (0 == type) {
+            when(mockCurrentDirent.getName()).thenReturn(stringPath);
+        }
+        if (1 == type) {
+            if (current) {
+                when(mockCurrentDirent.getName()).thenReturn(".", stringPath);
+            } else {
+                when(mockCurrentDirent.getName()).thenReturn("..", stringPath);
+            }
+        }
+        if (2 == type) {
+            when(mockCurrentDirent.getName()).thenReturn(".", "..", stringPath);
+        }
+        when(mockPath.resolve(any(String.class))).thenReturn(fakeResultPath);      //Mockito.doReturn(fakeResultPath).when(mockPath).resolve(stringPath);
 
         iterator.advance();
 
         assertEquals(fakeResultPath, iterator.getNextPath());
 
-        verify(mockCurrentDirent).getName();
         verify(mockPath).resolve(stringPath);
-        verify(mockStream).getDir();
+        if (0 == type) {
+            verify(mockCurrentDirent).getName();
+            verify(mockStream).getDir();
+            verify(mockStream).getDirHandle();
 
+            PowerMockito.verifyNew(dirent.class, times(2)).withNoArguments();
+            PowerMockito.verifyStatic();
+            dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
+            PowerMockito.verifyStatic();
+            dirent.free(nextPtr);
+        }
+        if (1 == type) {
+            verify(mockCurrentDirent, times(2)).getName();
+            if (current) {
+                verify(mockPath).resolve(".");
+            } else {
+                verify(mockPath).resolve("..");
+            }
+            verify(mockStream, times(2)).getDir();
+            verify(mockStream, times(2)).getDirHandle();
 
-        verify(mockStream).getDirHandle();
-        PowerMockito.verifyNew(dirent.class, times(2)).withNoArguments();
-        PowerMockito.verifyStatic();
-        dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
-        dirent.free(nextPtr);
+            PowerMockito.verifyNew(dirent.class, times(4)).withNoArguments();
+            PowerMockito.verifyStatic(times(2));
+            dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
+            PowerMockito.verifyStatic(times(2));
+            dirent.free(nextPtr);
+        }
+        if (2 == type) {
+            verify(mockCurrentDirent, times(3)).getName();
+            verify(mockPath).resolve(".");
+            verify(mockPath).resolve("..");
+            verify(mockStream, times(3)).getDir();
+            verify(mockStream, times(3)).getDirHandle();
+
+            PowerMockito.verifyNew(dirent.class, times(6)).withNoArguments();
+            PowerMockito.verifyStatic(times(3));
+            dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
+            PowerMockito.verifyStatic(times(3));
+            dirent.free(nextPtr);
+        }
     }
 
     @Test(expected = NoSuchElementException.class)
