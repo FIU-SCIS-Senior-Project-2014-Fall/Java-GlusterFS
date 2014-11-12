@@ -152,7 +152,7 @@ public class GlusterDirectoryIteratorTest {
         if (2 == type) {
             when(mockCurrentDirent.getName()).thenReturn(".", "..", stringPath);
         }
-        when(mockPath.resolve(any(String.class))).thenReturn(fakeResultPath);      //Mockito.doReturn(fakeResultPath).when(mockPath).resolve(stringPath);
+        when(mockPath.resolve(any(String.class))).thenReturn(fakeResultPath);
 
         iterator.advance();
 
