@@ -172,15 +172,26 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void delete(Path path) throws IOException {
-//        GlusterFileAttributes glusterFileAttributes = readAttributes(path, GlusterFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-//        if ()
-//
-//        GlusterFileSystem fileSystem = (GlusterFileSystem) path.getFileSystem();
-//        int unl = GLFS.glfs_unlink(fileSystem.getVolptr(), ((GlusterPath) path).getString());
-//        if (-1 == unl) {
-//            throw new IOException();
-//        }
+        if (!Files.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        }
+        if (Files.isDirectory(path)) {
+            if(!directoryIsEmpty(path)) {
+                throw new DirectoryNotEmptyException(path.toString());
+            }
 
+            int ret = GLFS.glfs_rmdir(((GlusterFileSystem)path.getFileSystem()).getVolptr(), path.toString());
+
+            if (ret < 0) {
+                throw new IOException(path.toString());
+            }
+        }
+
+        int ret = GLFS.glfs_unlink(((GlusterFileSystem)path.getFileSystem()).getVolptr(), path.toString());
+
+        if (ret < 0) {
+            throw new IOException(path.toString());
+        }
     }
 
     @Override
