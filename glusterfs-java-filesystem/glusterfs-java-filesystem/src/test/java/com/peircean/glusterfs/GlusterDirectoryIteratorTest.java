@@ -112,19 +112,20 @@ public class GlusterDirectoryIteratorTest {
     private void advanceHelper(int type, boolean current) throws Exception {
         doReturn(dirHandle).when(mockStream).getDirHandle();
         iterator.setStream(mockStream);
-        if (0 == type) {
-            PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent);
+        switch (type) {
+            case 1:
+                PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent,
+                        mockCurrentDirent, mockNextDirent);
+                break;
+            case 2:
+                PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent,
+                        mockCurrentDirent, mockNextDirent,
+                        mockCurrentDirent, mockNextDirent);
+                break;
+            default:
+                PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent);
+                break;
         }
-        if (1 == type) {
-            PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent,
-                                                                            mockCurrentDirent, mockNextDirent);
-        }
-        if (2 == type) {
-            PowerMockito.whenNew(dirent.class).withNoArguments().thenReturn(mockCurrentDirent, mockNextDirent,
-                                                                            mockCurrentDirent, mockNextDirent,
-                                                                            mockCurrentDirent, mockNextDirent);
-        }
-
         long nextPtr = 4444l;
         PowerMockito.mockStatic(dirent.class);
         Mockito.when(dirent.malloc(dirent.SIZE_OF)).thenReturn(nextPtr);
@@ -139,18 +140,20 @@ public class GlusterDirectoryIteratorTest {
 
         Mockito.doReturn(mockPath).when(mockStream).getDir();
         String stringPath = "foo";
-        if (0 == type) {
-            when(mockCurrentDirent.getName()).thenReturn(stringPath);
-        }
-        if (1 == type) {
-            if (current) {
-                when(mockCurrentDirent.getName()).thenReturn(".", stringPath);
-            } else {
-                when(mockCurrentDirent.getName()).thenReturn("..", stringPath);
-            }
-        }
-        if (2 == type) {
-            when(mockCurrentDirent.getName()).thenReturn(".", "..", stringPath);
+        switch (type) {
+            case 1:
+                if (current) {
+                    when(mockCurrentDirent.getName()).thenReturn(".", stringPath);
+                } else {
+                    when(mockCurrentDirent.getName()).thenReturn("..", stringPath);
+                }
+                break;
+            case 2:
+                when(mockCurrentDirent.getName()).thenReturn(".", "..", stringPath);
+                break;
+            default:
+                when(mockCurrentDirent.getName()).thenReturn(stringPath);
+                break;
         }
         when(mockPath.resolve(any(String.class))).thenReturn(fakeResultPath);
 
@@ -159,45 +162,47 @@ public class GlusterDirectoryIteratorTest {
         assertEquals(fakeResultPath, iterator.getNextPath());
 
         verify(mockPath).resolve(stringPath);
-        if (0 == type) {
-            verify(mockCurrentDirent).getName();
-            verify(mockStream).getDir();
-            verify(mockStream).getDirHandle();
+        switch (type) {
+            case 1:
+                verify(mockCurrentDirent, times(2)).getName();
+                if (current) {
+                    verify(mockPath).resolve(".");
+                } else {
+                    verify(mockPath).resolve("..");
+                }
+                verify(mockStream, times(2)).getDir();
+                verify(mockStream, times(2)).getDirHandle();
 
-            PowerMockito.verifyNew(dirent.class, times(2)).withNoArguments();
-            PowerMockito.verifyStatic();
-            dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
-            PowerMockito.verifyStatic();
-            dirent.free(nextPtr);
-        }
-        if (1 == type) {
-            verify(mockCurrentDirent, times(2)).getName();
-            if (current) {
+                PowerMockito.verifyNew(dirent.class, times(4)).withNoArguments();
+                PowerMockito.verifyStatic(times(2));
+                dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
+                PowerMockito.verifyStatic(times(2));
+                dirent.free(nextPtr);
+                break;
+            case 2:
+                verify(mockCurrentDirent, times(3)).getName();
                 verify(mockPath).resolve(".");
-            } else {
                 verify(mockPath).resolve("..");
-            }
-            verify(mockStream, times(2)).getDir();
-            verify(mockStream, times(2)).getDirHandle();
+                verify(mockStream, times(3)).getDir();
+                verify(mockStream, times(3)).getDirHandle();
 
-            PowerMockito.verifyNew(dirent.class, times(4)).withNoArguments();
-            PowerMockito.verifyStatic(times(2));
-            dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
-            PowerMockito.verifyStatic(times(2));
-            dirent.free(nextPtr);
-        }
-        if (2 == type) {
-            verify(mockCurrentDirent, times(3)).getName();
-            verify(mockPath).resolve(".");
-            verify(mockPath).resolve("..");
-            verify(mockStream, times(3)).getDir();
-            verify(mockStream, times(3)).getDirHandle();
+                PowerMockito.verifyNew(dirent.class, times(6)).withNoArguments();
+                PowerMockito.verifyStatic(times(3));
+                dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
+                PowerMockito.verifyStatic(times(3));
+                dirent.free(nextPtr);
+                break;
+            default:
+                verify(mockCurrentDirent).getName();
+                verify(mockStream).getDir();
+                verify(mockStream).getDirHandle();
 
-            PowerMockito.verifyNew(dirent.class, times(6)).withNoArguments();
-            PowerMockito.verifyStatic(times(3));
-            dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
-            PowerMockito.verifyStatic(times(3));
-            dirent.free(nextPtr);
+                PowerMockito.verifyNew(dirent.class, times(2)).withNoArguments();
+                PowerMockito.verifyStatic();
+                dirent.memmove(mockNextDirent, nextPtr, dirent.SIZE_OF);
+                PowerMockito.verifyStatic();
+                dirent.free(nextPtr);
+                break;
         }
     }
 
