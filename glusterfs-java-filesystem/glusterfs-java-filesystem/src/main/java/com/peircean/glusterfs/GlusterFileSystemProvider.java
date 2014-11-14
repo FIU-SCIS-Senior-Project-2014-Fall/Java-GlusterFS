@@ -185,12 +185,12 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
             if (ret < 0) {
                 throw new IOException(path.toString());
             }
-        }
+        } else {
+            int ret = GLFS.glfs_unlink(((GlusterFileSystem) path.getFileSystem()).getVolptr(), path.toString());
 
-        int ret = GLFS.glfs_unlink(((GlusterFileSystem)path.getFileSystem()).getVolptr(), path.toString());
-
-        if (ret < 0) {
-            throw new IOException(path.toString());
+            if (ret < 0) {
+                throw new IOException(path.toString());
+            }
         }
     }
 
