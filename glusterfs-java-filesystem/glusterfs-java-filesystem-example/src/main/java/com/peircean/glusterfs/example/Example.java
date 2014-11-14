@@ -1,19 +1,14 @@
 package com.peircean.glusterfs.example;
 
-import com.peircean.glusterfs.GlusterFileSystem;
-import com.peircean.glusterfs.GlusterPath;
-
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.*;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.PosixFilePermission;
-import java.nio.file.attribute.PosixFilePermissions;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import java.util.Properties;
 
 /**
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
@@ -29,143 +24,62 @@ public class Example {
     }
 
     public static void main(String[] args) throws URISyntaxException, IOException, InterruptedException {
-        System.out.println(getProvider("gluster").toString());
+        Properties properties = new Properties();
+        properties.load(Example.class.getClassLoader().getResourceAsStream("example.properties"));
 
-        String vagrantBox = "172.31.31.31";
-        String mountUri = "gluster://" + vagrantBox + ":foo/";
-        String testUri = "gluster://" + vagrantBox + ":foo/baz/";
-        Path mountPath = Paths.get(new URI(mountUri));
-        Path dirPath = Paths.get(new URI(testUri));
+        String glusterIP = properties.getProperty("glusterfs.server");
+        String volname = properties.getProperty("glusterfs.volume");
 
-        FileSystem fileSystem = FileSystems.newFileSystem(new URI(mountUri), null);
-        FileStore store = fileSystem.getFileStores().iterator().next();
-        System.out.println("TOTAL SPACE: " + store.getTotalSpace());
-        System.out.println("USABLE SPACE: " + store.getUsableSpace());
-        System.out.println("UNALLOCATED SPACE: " + store.getUnallocatedSpace());
-        System.out.println(fileSystem.toString());
+        String mountStr = "gluster://" + glusterIP + ":" +  volname + "/";
+        String dirStr = mountStr + "baz/";
+        String barStr = mountStr + "bar";
+        String fooStr = mountStr + "foo";
+        String hardlinkStr = mountStr + "bar.hardlink";
+        String symlinkStr = mountStr + "bar.symlink";
+        String fakePathStr = mountStr + "fakePath";
 
-        Files.createDirectory(dirPath); //doesn't see GlusterFileSystemProvider's createDirectory, so just moves along without complaint
+        Path dirPath = Paths.get(new URI(dirStr));
+        Path barPath = Paths.get(new URI(barStr));
+        Path fooPath = Paths.get(new URI(fooStr));
+        Path hardlinkPath = Paths.get(new URI(hardlinkStr));
+        Path symlinkPath = Paths.get(new URI(symlinkStr));
 
-        String hidden = "/foo/.bar";
-        boolean isHidden = fileSystem.provider().isHidden(new GlusterPath(((GlusterFileSystem) fileSystem), hidden));
-        System.out.println("Is " + hidden + " hidden? " + isHidden);
-
-        hidden = "/foo/bar";
-        isHidden = fileSystem.provider().isHidden(new GlusterPath(((GlusterFileSystem) fileSystem), hidden));
-        System.out.println("Is " + hidden + " hidden? " + isHidden);
-
-        Set<PosixFilePermission> posixFilePermissions = PosixFilePermissions.fromString("rw-rw-rw-");
-        FileAttribute<Set<PosixFilePermission>> attrs = PosixFilePermissions.asFileAttribute(posixFilePermissions);
-
-        Path glusterPath = Paths.get(new URI(testUri + "baz"));
-        System.out.println(glusterPath.getClass());
-        System.out.println(glusterPath);
-        System.out.println(glusterPath.getFileSystem().toString());
-
-        try {
-            Files.createFile(glusterPath, attrs);
-            System.out.println("File created");
+        System.out.println("May's contribution!\n");
+        System.out.println("Let's create a directory called \"baz.\"");
+        try{
+            Files.createDirectory(dirPath);
+            System.out.println("Done; that was fast.");
         } catch (IOException e) {
-            System.out.println("File exists, created at " + Files.getLastModifiedTime(glusterPath));
+            System.out.println("Could not create directory. Something went wrong.");
+            System.exit(-1);
         }
-        String hello = "Hello, ";
-        Files.write(glusterPath, hello.getBytes(), StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
-        String world = "world!";
-        Files.write(glusterPath, world.getBytes(), StandardOpenOption.WRITE, StandardOpenOption.APPEND);
-        long bazSize = Files.size(glusterPath);
-        System.out.println("SIZE: " + bazSize);
-        byte[] readBytes = Files.readAllBytes(glusterPath);
-        System.out.println(hello + world + " == " + new String(readBytes));
-        System.out.println("Last modified: " + Files.getLastModifiedTime(glusterPath) + " (should be now)");
-        fileSystem.provider().checkAccess(glusterPath, AccessMode.READ, AccessMode.WRITE);
-        System.out.println("Can read & write file");
+
+        System.out.println("Now let's try to recreate it." +
+                "\nThis will fail because it already exists.");
         try {
-            fileSystem.provider().checkAccess(glusterPath, AccessMode.EXECUTE);
-            System.out.println("Uh oh, file is executable, that's bad.");
-        } catch (AccessDeniedException e) {
-            System.out.println("Can't execute file, that's good.");
+            Files.createDirectory(dirPath);
+        } catch (FileAlreadyExistsException e) {
+            System.out.println("Failed to create directory: already exists. Good!");
         }
 
-        Path copyPath = glusterPath.resolveSibling("copy");
-//        Files.createFile(copyPath, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-rw-rw-")));
-        Files.copy(glusterPath, copyPath, StandardCopyOption.REPLACE_EXISTING);
-        long copySize = Files.size(copyPath);
-        System.out.println("Source and copy are " + (bazSize == copySize ? "" : "NOT") + " equal.");
+        Path fakePath = Paths.get(new URI(fakePathStr));
+        FileSystemProvider gfsp = barPath.getFileSystem().provider();
 
+        System.out.println("Now let's get the file store for some file \"bar.\"");
+        System.out.println("File store for bar in gluster provider: " + gfsp.getFileStore(barPath));
+
+        System.out.println("Let's try to get the file store for a file that doesn't exist: \"fakePath\"");
         try {
-            Files.newDirectoryStream(mountPath.resolve("bazzzzz"));
-        } catch (NotDirectoryException e) {
-            System.out.println("Can't list directory of a file, good.");
-        }
-        DirectoryStream.Filter<? super Path> filter = new DirectoryStream.Filter<Path>() {
-            @Override
-            public boolean accept(Path entry) throws IOException {
-                return entry.endsWith("1");
-            }
-        };
-        DirectoryStream<Path> stream = Files.newDirectoryStream(mountPath, filter);
-        System.out.println("Mount contents:");
-
-        for (Path p : stream) {
-            System.out.println(p.toString());
+            System.out.println("File store for fakePath (this should not print): " + gfsp.getFileStore(fakePath));
+        } catch (IOException e) {
+            System.err.println("fakePath does not exist: good!");
         }
 
-        filter = new DirectoryStream.Filter<Path>() {
-            @Override
-            public boolean accept(Path entry) throws IOException {
-                return entry.endsWith("a");
-            }
-        };
-        stream = Files.newDirectoryStream(mountPath, filter);
-        System.out.println("Mount contents:");
-
-        for (Path p : stream) {
-            System.out.println(p.toString());
-        }
-
-        stream = Files.newDirectoryStream(mountPath);
-        System.out.println("Mount contents:");
-
-        PathMatcher matcher = fileSystem.getPathMatcher("glob:**/*z");
-        for (Path p : stream) {
-            System.out.println(p.toString());
-            if (matcher.matches(p)) {
-                System.out.println(" **** MATCH ****");
-            }
-        }
-
-        stream = Files.newDirectoryStream(mountPath, "*z");
-        System.out.println("Mount contents:");
-
-        for (Path p : stream) {
-            System.out.println(p.toString());
-        }
-
-        WatchService watchService = fileSystem.newWatchService();
-        Path one = Paths.get(new URI("gluster://" + vagrantBox + ":foo/one"));
-
-        System.out.println("STARTSWITH empty: " + one.startsWith("/"));
-        one.register(watchService, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_MODIFY, StandardWatchEventKinds.ENTRY_DELETE);
-        for (int i = 0; i < 10; i++) {
-            WatchKey take = watchService.poll(1, TimeUnit.SECONDS);
-            if (null == take) {
-                continue;
-            }
-            List<WatchEvent<?>> events = take.pollEvents();
-            for (WatchEvent e : events) {
-                Path path = (Path) e.context();
-                Path absolutePath = one.resolve(path).toAbsolutePath();
-                boolean exists = Files.exists(absolutePath);
-                System.out.println("EXISTS? " + exists);
-                if (exists) {
-                    System.out.println("SIZE: " + Files.size(absolutePath));
-                }
-                System.out.println(absolutePath);
-                System.out.println(e.toString());
-            }
-            take.reset();
-        }
-
-        fileSystem.close();
+        System.out.println("\nIan's contribution!\n");
+        System.out.println("Test of isSameFile:");
+        System.out.println("Is bar the same as bar? " + Files.isSameFile(barPath, barPath));
+        System.out.println("Is bar the same as foo? " + Files.isSameFile(barPath, fooPath));
+        System.out.println("Is bar the same as bar.hardlink? " + Files.isSameFile(barPath, hardlinkPath));
+        System.out.println("Is bar the same as bar.symlink? " + Files.isSameFile(barPath, symlinkPath));
     }
 }

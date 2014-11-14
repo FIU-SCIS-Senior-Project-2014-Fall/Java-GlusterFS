@@ -326,6 +326,19 @@ public class GLFSTest {
     }
 
     @Test(dependsOnMethods = "testRename")
+    public void testRmdir_NotEmpty() {
+        int ret = glfs_rmdir(vol, DIR_PATH);
+        System.out.println("REMOVE STATUS: " + ret);
+        int errno = UtilJNI.errno();
+        System.out.println("ERRNO: " + errno);
+        String strerror = UtilJNI.strerror();
+        System.out.println("STRERROR: " + strerror);
+        assertEquals(-1, ret);
+        assertEquals("Directory not empty", strerror);
+        assertEquals(39, errno);
+    }
+
+    @Test(dependsOnMethods = "testRmdir_NotEmpty")
     public void testUnlink() {
         int unl = glfs_unlink(vol, FILE_PATH_RENAMED);
         System.out.println("UNLINK: " + unl);
@@ -346,6 +359,26 @@ public class GLFSTest {
     }
 
     @Test(dependsOnMethods = "testUnlink_NonExisting")
+    public void testRmdir() {
+        int ret = glfs_rmdir(vol, DIR_PATH);
+        System.out.println("REMOVE STATUS: " + ret);
+        assertEquals(0, ret);
+    }
+
+    @Test(dependsOnMethods = "testRmdir")
+    public void testRmdir_NonExisting() {
+        int ret = glfs_rmdir(vol, DIR_PATH);
+        System.out.println("REMOVE STATUS: " + ret);
+        int errno = UtilJNI.errno();
+        System.out.println("ERRNO: " + errno);
+        String strerror = UtilJNI.strerror();
+        System.out.println("STRERROR: " + strerror);
+        assertEquals(-1, ret);
+        assertEquals("No such file or directory", strerror);
+        assertEquals(2, errno);
+    }
+
+    @Test(dependsOnMethods = "testRmdir_NonExisting")
     public void testFini() {
         int fini = glfs_fini(vol);
         System.out.println("FINI: " + fini);
