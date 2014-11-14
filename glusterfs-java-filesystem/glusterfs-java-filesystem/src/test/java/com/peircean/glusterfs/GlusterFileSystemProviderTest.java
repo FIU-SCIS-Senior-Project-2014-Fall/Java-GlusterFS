@@ -763,7 +763,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
     public void testIsSameFile_whenOnlySecondPathExists() throws IOException {
         sameFileHelper_whenOnlyOneExists(false);
     }
-    
+
     private void sameFileHelper_whenOnlyOneExists(boolean first) throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(false);
@@ -803,7 +803,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
     private void isSameFile_helper(boolean same) throws Exception {
         GlusterPath glusterPath = Mockito.mock(GlusterPath.class);
         GlusterFileSystem actualFileSystem = new GlusterFileSystem(provider, "foohost", "volfoo", 1234L);
-        
+
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(true);
         when(Files.exists(glusterPath)).thenReturn(true);
@@ -827,7 +827,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
         doReturn(stat2).when(provider).statPath(mockPath);
 
         boolean ret = provider.isSameFile(glusterPath, mockPath);
-        
+
         assertTrue(same == ret);
 
         verify(mockPath).getFileSystem();
@@ -840,12 +840,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
         verifyStatic();
         Files.exists(glusterPath);
     }
-    
+
     @Test(expected = IOException.class)
     public void testStatPath_whenItFails() throws IOException {
         long volptr = 1234L;
         stat stat = new stat();
-        
+
         mockStatic(GLFS.class);
         String pathString = "/foo";
         when(GLFS.glfs_stat(volptr, pathString, stat)).thenReturn(-1);
@@ -856,14 +856,14 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         provider.statPath(mockPath);
     }
-    
+
     @Test
     public void testStatPath() throws Exception {
         long volptr = 1234L;
         stat stat = new stat();
 
         whenNew(stat.class).withNoArguments().thenReturn(stat);
-        
+
         mockStatic(GLFS.class);
         String pathString = "/foo";
         when(GLFS.glfs_stat(volptr, pathString, stat)).thenReturn(0);
@@ -873,16 +873,16 @@ public class GlusterFileSystemProviderTest extends TestCase {
         doReturn(pathString).when(mockPath).getString();
 
         stat ret = provider.statPath(mockPath);
-        
+
         assertTrue(ret == stat);
 
         verify(mockPath).getFileSystem();
         verify(mockFileSystem).getVolptr();
         verify(mockPath).getString();
-        
+
         verifyStatic();
         GLFS.glfs_stat(volptr, pathString, stat);
-        
+
         verifyNew(stat.class).withNoArguments();
     }
 
@@ -913,5 +913,37 @@ public class GlusterFileSystemProviderTest extends TestCase {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(false);
         provider.getFileStore(mockPath);
+    }
+
+    @Test
+    public void testDirectoryIsEmpty_whenEmpty() throws Exception {
+        directoryIsEmpty_helper(true);
+    }
+
+    @Test
+    public void testDirectoryIsEmpty_whenNotEmpty() throws Exception {
+        directoryIsEmpty_helper(false);
+    }
+
+    private void directoryIsEmpty_helper(boolean empty) throws Exception {
+        doReturn(mockStream).when(provider).newDirectoryStream(mockPath, null);
+        doReturn(mockIterator).when(mockStream).iterator();
+        if (empty) {
+            doReturn(false).when(mockIterator).hasNext();
+        } else {
+            doReturn(true).when(mockIterator).hasNext();
+        }
+
+        boolean result = provider.directoryIsEmpty(mockPath);
+
+        if (empty) {
+            assertTrue(result);
+        } else {
+            assertFalse(result);
+        }
+
+        verify(provider).newDirectoryStream(mockPath, null);
+        verify(mockStream).iterator();
+        verify(mockIterator).hasNext();
     }
 }
