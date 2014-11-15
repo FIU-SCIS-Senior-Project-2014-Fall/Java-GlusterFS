@@ -112,5 +112,12 @@ public class Example {
         } catch (IOException e) {
             System.out.println("No. Good!");
         }
+        System.out.println("How about symbolic links? Can we delete those safely?");
+        try {
+            Files.delete(symlinkPath);
+            System.out.println("Yep!");
+        } catch (IOException e) {
+            System.out.println("Nope!");
+        }
     }
 }
