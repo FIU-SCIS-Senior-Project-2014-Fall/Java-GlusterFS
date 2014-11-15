@@ -373,17 +373,17 @@ public class GlusterFileSystemProviderTest extends TestCase {
     }
 
     @Test
-    public void testDelete_whenFile() throws IOException {
+    public void testDelete_whenFileAndSuccess() throws IOException {
         delete_helper(false, true);
     }
 
     @Test
-    public void testDelete_whenDirectory() throws IOException {
+    public void testDelete_whenDirectoryAndSuccess() throws IOException {
         delete_helper(true, true);
     }
 
     private void delete_helper(boolean directory, boolean success) throws IOException {
-        long volptr = 1234l;
+        long volptr = 1234L;
         String path = "/foo";
 
         mockStatic(Files.class);
