@@ -364,15 +364,25 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test(expected = IOException.class)
     public void testDelete_whenDirectoryAndFailing() throws IOException {
-        deleteFailing_helper(true);
+        delete_helper(true, false);
     }
 
     @Test(expected = IOException.class)
-    public void testDelete_whenNotDirectoryAndFailing() throws IOException {
-        deleteFailing_helper(false);
+    public void testDelete_whenFileAndFailing() throws IOException {
+        delete_helper(false, false);
     }
 
-    private void deleteFailing_helper(boolean directory) throws IOException {
+    @Test
+    public void testDelete_whenFile() throws IOException {
+        delete_helper(false, true);
+    }
+
+    @Test
+    public void testDelete_whenDirectory() throws IOException {
+        delete_helper(true, true);
+    }
+
+    private void delete_helper(boolean directory, boolean success) throws IOException {
         long volptr = 1234l;
         String path = "/foo";
 
@@ -382,24 +392,45 @@ public class GlusterFileSystemProviderTest extends TestCase {
         when(Files.exists(mockPath)).thenReturn(true);
         doReturn(mockFileSystem).when(mockPath).getFileSystem();
         doReturn(volptr).when(mockFileSystem).getVolptr();
-        doReturn(path).when(mockPath).getString();
+        doReturn(path).when(mockPath).toString();
 
-        if(directory){
+        if (directory) {
             when(Files.isDirectory(mockPath)).thenReturn(true);
             doReturn(true).when(provider).directoryIsEmpty(mockPath);
-            when(GLFS.glfs_rmdir(volptr, path)).thenReturn(-1);
-        }
-        else{
+            if (success) {
+                when(GLFS.glfs_rmdir(volptr, path)).thenReturn(0);
+            } else {
+                when(GLFS.glfs_rmdir(volptr, path)).thenReturn(-1);
+            }
+        } else {
             when(Files.isDirectory(mockPath)).thenReturn(false);
-            when(GLFS.glfs_unlink(volptr, path)).thenReturn(-1);
+            if (success) {
+                when(GLFS.glfs_unlink(volptr, path)).thenReturn(0);
+            } else {
+                when(GLFS.glfs_unlink(volptr, path)).thenReturn(-1);
+            }
         }
 
         provider.delete(mockPath);
-    }
 
-    @Test
-    public void testDelete() throws IOException {
+        if (success) {
+            verifyStatic();
+            Files.exists(mockPath);
+            verifyStatic();
+            Files.isDirectory(mockPath);
 
+            verify(mockPath).getFileSystem();
+            verify(mockFileSystem).getVolptr();
+
+            if (directory) {
+                verify(provider).directoryIsEmpty(mockPath);
+                verifyStatic();
+                GLFS.glfs_rmdir(volptr, path);
+            } else {
+                verifyStatic();
+                GLFS.glfs_unlink(volptr, path);
+            }
+        }
     }
 
     @Test
