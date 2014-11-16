@@ -185,6 +185,10 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path path, Path path2, CopyOption... copyOptions) throws IOException {
+        if (path.equals(path2)) {
+            return;
+        }
+
         boolean overwrite = false;
         boolean copyAttributes = false;
         for (CopyOption co : copyOptions) {
@@ -201,12 +205,17 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
         if (!overwrite && Files.exists(path2)) {
             throw new FileAlreadyExistsException("Target " + path2 + " exists and REPLACE_EXISTING not specified");
-        } else if (Files.isDirectory(path2) && !directoryIsEmpty(path2)) {
+        }
+        if (Files.isDirectory(path2) && !directoryIsEmpty(path2)) {
             throw new DirectoryNotEmptyException("Target not empty: " + path2);
         }
-        copyFileContent(path, path2);
-        if (copyAttributes) {
-            copyFileAttributes(path, path2);
+        if (Files.isDirectory(path)) {
+            Files.createDirectory(path2);
+        } else {
+            copyFileContent(path, path2);
+            if (copyAttributes) {
+                copyFileAttributes(path, path2);
+            }
         }
     }
 
@@ -215,8 +224,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         long volptr = ((GlusterFileSystem) path.getFileSystem()).getVolptr();
         int retStat = glfs_stat(volptr, path.toString(), stat);
         int retChmod = glfs_chmod(volptr, path2.toString(), stat.st_mode);
-        int retChown = glfs_chown(volptr, path2.toString(), stat.st_uid, stat.st_gid);
-        if (retStat < 0 || retChmod < 0 || retChown < 0) {
+        if (retStat < 0 || retChmod < 0) {
             throw new IOException("Could not copy file attributes.");
         }
     }
