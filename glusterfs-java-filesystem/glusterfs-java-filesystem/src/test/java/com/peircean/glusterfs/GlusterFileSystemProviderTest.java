@@ -29,6 +29,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.*;
+import static org.powermock.api.mockito.PowerMockito.verifyNoMoreInteractions;
+import static org.powermock.api.mockito.PowerMockito.verifyZeroInteractions;
 
 /**
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
@@ -496,6 +498,36 @@ public class GlusterFileSystemProviderTest extends TestCase {
         assertEquals(buf.f_bsize * buf.f_bfree, unallocatedSpace);
     }
 
+    @Test
+    public void testCopyFile_whenPathsEqual() throws IOException {
+        doReturn("/").when(mockFileSystem).getSeparator();
+        GlusterPath path1 = new GlusterPath(mockFileSystem, "/foo/bar");
+        GlusterPath path2 = new GlusterPath(mockFileSystem, "/foo/bar");
+
+        provider.copy(path1, path2);
+
+        verify(mockFileSystem, times(6)).getSeparator();
+        verifyNoMoreInteractions(mockFileSystem);
+        verifyZeroInteractions(Files.class);
+    }
+
+    @Test
+    public void testCopyFile_whenSourceIsDirectory() throws IOException {
+        mockStatic(Files.class);
+        when(Files.isDirectory(targetPath)).thenReturn(false);
+        when(Files.isDirectory(mockPath)).thenReturn(true);
+        when(Files.createDirectory(targetPath)).thenReturn(targetPath);
+
+        provider.copy(mockPath, targetPath);
+
+        verifyStatic();
+        Files.isDirectory(targetPath);
+        verifyStatic();
+        Files.isDirectory(mockPath);
+        verifyStatic();
+        Files.createDirectory(targetPath);
+    }
+
     @Test(expected = UnsupportedOperationException.class)
     public void testCopyFile_whenUnsupportedOption() throws IOException {
         CopyOption copyOption = StandardCopyOption.ATOMIC_MOVE;
@@ -534,8 +566,8 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Path targetPath = mockPath.resolveSibling("copy");
         mockStatic(Files.class);
         when(Files.isDirectory(targetPath)).thenReturn(false);
+        when(Files.isDirectory(mockPath)).thenReturn(false);
         when(Files.exists(targetPath)).thenReturn(false);
-        when(Files.createFile(targetPath)).thenReturn(targetPath);
         doNothing().when(provider).copyFileContent(mockPath, targetPath);
         if (attributes) {
             doNothing().when(provider).copyFileAttributes(mockPath, targetPath);
@@ -548,10 +580,13 @@ public class GlusterFileSystemProviderTest extends TestCase {
         if (attributes) {
             verify(provider).copyFileAttributes(mockPath, targetPath);
         }
+
         verifyStatic();
         Files.isDirectory(targetPath);
+        verifyStatic();
         Files.exists(targetPath);
-        Files.createFile(targetPath);
+        verifyStatic();
+        Files.isDirectory(mockPath);
     }
 
     @Test
@@ -582,12 +617,9 @@ public class GlusterFileSystemProviderTest extends TestCase {
         mockStatic(GLFS.class);
         when(GLFS.glfs_stat(volptr, pathString, stat)).thenReturn(0);
         when(GLFS.glfs_chmod(volptr, pathString, stat.st_mode)).thenReturn(0);
-        when(GLFS.glfs_chown(volptr, pathString, stat.st_uid, stat.st_gid)).thenReturn(0);
 
         provider.copyFileAttributes(mockPath, targetPath);
 
-        verifyStatic();
-        GLFS.glfs_chown(volptr, pathString, stat.st_uid, stat.st_gid);
         verifyStatic();
         GLFS.glfs_chmod(volptr, pathString, stat.st_mode);
         verifyStatic();
@@ -610,7 +642,6 @@ public class GlusterFileSystemProviderTest extends TestCase {
         mockStatic(GLFS.class);
         when(GLFS.glfs_stat(volptr, pathString, stat)).thenReturn(-1);
         when(GLFS.glfs_chmod(volptr, pathString, stat.st_mode)).thenReturn(-1);
-        when(GLFS.glfs_chown(volptr, pathString, stat.st_uid, stat.st_gid)).thenReturn(-1);
 
         provider.copyFileAttributes(mockPath, targetPath);
     }
