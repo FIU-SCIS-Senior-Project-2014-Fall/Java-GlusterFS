@@ -554,6 +554,67 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Files.createFile(targetPath);
     }
 
+    @Test
+    public void testCopyFileContent() throws IOException {
+        byte[] bytes = {0b1001000, 0b1100101, 0b1101100, 0b1101100, 0b1101111, 0b0100000, 0b1010111, 0b1101111, 0b1110010, 0b1101100, 0b1100100};
+        mockStatic(Files.class);
+        when(Files.readAllBytes(mockPath)).thenReturn(bytes);
+        when(Files.write(targetPath, bytes)).thenReturn(targetPath);
+
+        provider.copyFileContent(mockPath, targetPath);
+
+        verifyStatic();
+        Files.readAllBytes(mockPath);
+        verifyStatic();
+        Files.write(targetPath, bytes);
+    }
+
+    @Test
+    public void testCopyFileAttributes() throws IOException {
+        stat stat = new stat();
+        long volptr = 1234L;
+        String pathString = "/foo";
+        when(mockPath.getFileSystem()).thenReturn(mockFileSystem);
+        when(mockFileSystem.getVolptr()).thenReturn(volptr);
+        when(mockPath.toString()).thenReturn(pathString);
+        when(targetPath.toString()).thenReturn(pathString);
+
+        mockStatic(GLFS.class);
+        when(GLFS.glfs_stat(volptr, pathString, stat)).thenReturn(0);
+        when(GLFS.glfs_chmod(volptr, pathString, stat.st_mode)).thenReturn(0);
+        when(GLFS.glfs_chown(volptr, pathString, stat.st_uid, stat.st_gid)).thenReturn(0);
+
+        provider.copyFileAttributes(mockPath, targetPath);
+
+        verifyStatic();
+        GLFS.glfs_chown(volptr, pathString, stat.st_uid, stat.st_gid);
+        verifyStatic();
+        GLFS.glfs_chmod(volptr, pathString, stat.st_mode);
+        verifyStatic();
+        GLFS.glfs_stat(volptr, pathString, stat);
+
+        verify(mockFileSystem, times(3)).getVolptr();
+        verify(mockPath).getFileSystem();
+    }
+
+    @Test(expected = IOException.class)
+    public void testCopyFileAttributes_whenFailing() throws IOException {
+        stat stat = new stat();
+        long volptr = 1234L;
+        String pathString = "/foo";
+        when(mockPath.getFileSystem()).thenReturn(mockFileSystem);
+        when(mockFileSystem.getVolptr()).thenReturn(volptr);
+        when(mockPath.toString()).thenReturn(pathString);
+        when(targetPath.toString()).thenReturn(pathString);
+
+        mockStatic(GLFS.class);
+        when(GLFS.glfs_stat(volptr, pathString, stat)).thenReturn(-1);
+        when(GLFS.glfs_chmod(volptr, pathString, stat.st_mode)).thenReturn(-1);
+        when(GLFS.glfs_chown(volptr, pathString, stat.st_uid, stat.st_gid)).thenReturn(-1);
+
+        provider.copyFileAttributes(mockPath, targetPath);
+    }
+
     @Test(expected = AtomicMoveNotSupportedException.class)
     public void testMoveFile_whenAtomicMove() throws IOException {
         CopyOption copyOption = StandardCopyOption.ATOMIC_MOVE;

@@ -39,6 +39,7 @@ import java.util.Properties;
 
 import static com.peircean.libgfapi_jni.internal.GLFS.*;
 import static org.testng.AssertJUnit.assertEquals;
+import static org.testng.AssertJUnit.assertNotSame;
 import static org.testng.AssertJUnit.assertTrue;
 
 /**
@@ -58,6 +59,7 @@ public class GLFSTest {
     private long dir;
     private long dirpos;
     private Properties properties = null;
+    private stat stat;
 
     private Properties getProperties() throws IOException {
         if (null == properties) {
@@ -188,7 +190,7 @@ public class GLFSTest {
 
     @Test(dependsOnMethods = "testRead")
     public void testStats() {
-        stat stat = new stat();
+        stat = new stat();
         int statR = GLFS.glfs_stat(vol, FILE_PATH, stat);
         stat lstat = new stat();
         int lstatR = GLFS.glfs_lstat(vol, FILE_PATH, lstat);
@@ -209,6 +211,21 @@ public class GLFSTest {
     }
 
     @Test(dependsOnMethods = "testStats")
+    public void testChmod() {
+        stat newStat = new stat();
+        int modret = GLFS.glfs_chmod(vol, FILE_PATH, 0660);
+        GLFS.glfs_stat(vol, FILE_PATH, newStat);
+        boolean differentMode = newStat.st_mode != stat.st_mode;
+
+        System.out.println("CHMOD ret: " + modret);
+        System.out.println("CHMOD: " + newStat.st_mode);
+
+        assertTrue(differentMode);
+        assertEquals(newStat.st_mode, 0100660);
+        assertEquals(modret, 0);
+    }
+
+    @Test(dependsOnMethods = "testChmod")
     public void testFromGlfd() {
         long glfs = glfs_from_glfd(file);
         System.out.println("GLFS_GLFD: " + glfs);
