@@ -3,10 +3,7 @@ package com.peircean.glusterfs.example;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.FileAlreadyExistsException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Properties;
 
@@ -60,6 +57,14 @@ public class Example {
             Files.createDirectory(dirPath);
         } catch (FileAlreadyExistsException e) {
             System.out.println("Failed to create directory: already exists. Good!");
+        }
+
+        System.out.println("Now let's copy bar into a new file called foo.\nWe'll be using foo later.");
+        try {
+            Files.copy(barPath, fooPath, StandardCopyOption.COPY_ATTRIBUTES, StandardCopyOption.REPLACE_EXISTING);
+            System.out.println("bar copied to foo");
+        } catch (IOException e) {
+            System.out.println("Copy failed!");
         }
 
         Path fakePath = Paths.get(new URI(fakePathStr));

@@ -198,14 +198,11 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
                 copyAttributes = true;
             }
         }
-        boolean exists = Files.exists(path2);
-        if (!overwrite && exists) {
+
+        if (!overwrite && Files.exists(path2)) {
             throw new FileAlreadyExistsException("Target " + path2 + " exists and REPLACE_EXISTING not specified");
         } else if (Files.isDirectory(path2) && !directoryIsEmpty(path2)) {
             throw new DirectoryNotEmptyException("Target not empty: " + path2);
-        }
-        if (!exists) {
-            Files.createFile(path2);
         }
         copyFileContent(path, path2);
         if (copyAttributes) {
@@ -213,12 +210,20 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         }
     }
 
-    void copyFileAttributes(Path path, Path path2) {
-
+    void copyFileAttributes(Path path, Path path2) throws IOException {
+        stat stat = new stat();
+        GlusterFileSystem glusterFileSystem = (GlusterFileSystem) path.getFileSystem();
+        int retStat = glfs_stat(glusterFileSystem.getVolptr(), path.toString(), stat);
+        int retChmod = glfs_chmod(glusterFileSystem.getVolptr(), path2.toString(), stat.st_mode);
+        int retChown = glfs_chown(glusterFileSystem.getVolptr(), path2.toString(), stat.st_uid, stat.st_gid);
+        if (retStat < 0 || retChmod < 0 || retChown < 0) {
+            throw new IOException("Could not copy file attributes.");
+        }
     }
 
-    void copyFileContent(Path path, Path path2) {
-
+    void copyFileContent(Path path, Path path2) throws IOException {
+        byte[] readBytes = Files.readAllBytes(path);
+        Files.write(path2, readBytes);
     }
 
     boolean directoryIsEmpty(Path path) throws IOException {
