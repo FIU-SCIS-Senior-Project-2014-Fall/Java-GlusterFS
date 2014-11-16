@@ -593,7 +593,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
         verifyStatic();
         GLFS.glfs_stat(volptr, pathString, stat);
 
-        verify(mockFileSystem, times(3)).getVolptr();
+        verify(mockFileSystem).getVolptr();
         verify(mockPath).getFileSystem();
     }
 

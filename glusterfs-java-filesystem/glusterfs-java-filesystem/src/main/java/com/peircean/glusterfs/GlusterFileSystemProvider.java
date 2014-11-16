@@ -212,10 +212,10 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     void copyFileAttributes(Path path, Path path2) throws IOException {
         stat stat = new stat();
-        GlusterFileSystem glusterFileSystem = (GlusterFileSystem) path.getFileSystem();
-        int retStat = glfs_stat(glusterFileSystem.getVolptr(), path.toString(), stat);
-        int retChmod = glfs_chmod(glusterFileSystem.getVolptr(), path2.toString(), stat.st_mode);
-        int retChown = glfs_chown(glusterFileSystem.getVolptr(), path2.toString(), stat.st_uid, stat.st_gid);
+        long volptr = ((GlusterFileSystem) path.getFileSystem()).getVolptr();
+        int retStat = glfs_stat(volptr, path.toString(), stat);
+        int retChmod = glfs_chmod(volptr, path2.toString(), stat.st_mode);
+        int retChown = glfs_chown(volptr, path2.toString(), stat.st_uid, stat.st_gid);
         if (retStat < 0 || retChmod < 0 || retChown < 0) {
             throw new IOException("Could not copy file attributes.");
         }
