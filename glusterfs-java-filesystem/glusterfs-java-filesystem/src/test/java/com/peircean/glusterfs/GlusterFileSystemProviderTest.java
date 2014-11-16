@@ -29,6 +29,8 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
 import static org.powermock.api.mockito.PowerMockito.*;
+import static org.powermock.api.mockito.PowerMockito.verifyNoMoreInteractions;
+import static org.powermock.api.mockito.PowerMockito.verifyZeroInteractions;
 
 /**
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
@@ -554,6 +556,19 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Files.createFile(targetPath);
     }
 
+    @Test
+    public void testMoveFile_whenPathsEqual() throws IOException {
+        doReturn("/").when(mockFileSystem).getSeparator();
+        GlusterPath path1 = new GlusterPath(mockFileSystem, "/foo/bar");
+        GlusterPath path2 = new GlusterPath(mockFileSystem, "/foo/bar");
+
+        provider.move(path1, path2);
+
+        verify(mockFileSystem, times(6)).getSeparator();
+        verifyNoMoreInteractions(mockFileSystem);
+        verifyZeroInteractions(Files.class);
+    }
+
     @Test(expected = AtomicMoveNotSupportedException.class)
     public void testMoveFile_whenAtomicMove() throws IOException {
         CopyOption copyOption = StandardCopyOption.ATOMIC_MOVE;
@@ -617,10 +632,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
         verify(mockPath).getFileSystem();
         verify(targetPath).getFileSystem();
         verify(mfs).getVolptr();
+
         verifyStatic();
         Files.isDirectory(targetPath);
+        verifyStatic();
         Files.exists(targetPath);
-        Files.createFile(targetPath);
+        verifyStatic();
         GLFS.glfs_rename(volptr, srcPath, dstPath);
     }
 
