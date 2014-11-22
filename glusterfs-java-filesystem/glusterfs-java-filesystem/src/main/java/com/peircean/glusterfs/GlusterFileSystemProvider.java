@@ -235,7 +235,10 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (!path.isAbsolute() || !path2.isAbsolute()) {
             throw new UnsupportedOperationException("Relative paths not supported: " + path + " -> " + path2);
         }
-        if (isSameFile(path, path2)) {
+        if (!Files.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        }
+        if (Files.exists(path2) && isSameFile(path, path2)) {
             return;
         }
 

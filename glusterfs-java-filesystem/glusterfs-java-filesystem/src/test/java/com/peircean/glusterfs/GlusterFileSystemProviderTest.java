@@ -9,6 +9,7 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
+import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -37,7 +38,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyNew;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GLFS.class, GlusterFileSystemProvider.class, GlusterFileChannel.class, GlusterFileAttributes.class,
-        GlusterDirectoryStream.class, GlusterFileSystem.class})
+        GlusterDirectoryStream.class, GlusterFileSystem.class, Files.class})
 public class GlusterFileSystemProviderTest extends TestCase {
 
     public static final String SERVER = "hostname";
@@ -569,8 +570,25 @@ public class GlusterFileSystemProviderTest extends TestCase {
         provider.move(mockPath, targetPath);
     }
     
+    @Test(expected = NoSuchFileException.class)
+    public void testMoveFile_whenFirstPathDoesntExist() throws IOException {
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
+
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(mockPath)).thenReturn(false);
+        
+        provider.move(mockPath, targetPath);
+    }
+    
     @Test
     public void testMoveFile_whenSameFile() throws IOException {
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
+
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(targetPath)).thenReturn(true);
+
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
         doReturn(true).when(provider).isSameFile(mockPath, targetPath);
@@ -579,10 +597,22 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verify(provider).isSameFile(mockPath, targetPath);
         verify(mockPath, never()).getFileSystem();
+
+        verifyStatic();
+        Files.exists(mockPath);
+
+        verifyStatic();
+        Files.exists(targetPath);
     }
 
     @Test(expected = AtomicMoveNotSupportedException.class)
     public void testMoveFile_whenAtomicMove() throws IOException {
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
+
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(targetPath)).thenReturn(false);
+
         CopyOption copyOption = StandardCopyOption.ATOMIC_MOVE;
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
@@ -593,6 +623,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test(expected = FileAlreadyExistsException.class)
     public void testMoveFile_whenTargetExists_andNoReplaceExisting() throws IOException {
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
+
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(targetPath)).thenReturn(true);
+
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
@@ -603,6 +639,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test(expected = DirectoryNotEmptyException.class)
     public void testMoveFile_whenTargetDirNotEmpty_andReplaceExisting() throws IOException {
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
+
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(targetPath)).thenReturn(true);
+
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
@@ -614,6 +656,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMoveFile_whenDifferentFilesystem() throws IOException {
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
+
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(targetPath)).thenReturn(false);
+
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
@@ -629,6 +677,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test
     public void testMoveFile_whenTargetDoesNotExist() throws IOException {
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
+
+        mockStatic(Files.class);
+        PowerMockito.when(Files.exists(targetPath)).thenReturn(false);
+
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
