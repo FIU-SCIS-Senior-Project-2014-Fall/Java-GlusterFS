@@ -89,7 +89,7 @@ To run:
 - Filesystem/volume stats   
     See the total, free, and usable bytes in a volume
 - Directory listing (with filtering)
-- Move/rename files
+- Move/rename files (only supports moving with absolute paths on the same GlusterFS volume)
 - Watch files for changes   
     Complete except for GlusterWatchKeyTest, in progress
 - Publish test coverage & code quality reports to [SonarQube](http://sonar.peircean.com/dashboard/index/com.peircean.glusterfs:glusterfs-java-filesystem)

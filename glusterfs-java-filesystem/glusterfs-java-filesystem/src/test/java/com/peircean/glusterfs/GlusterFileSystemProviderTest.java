@@ -9,7 +9,6 @@ import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.Spy;
-import org.powermock.api.mockito.PowerMockito;
 import org.powermock.core.classloader.annotations.PrepareForTest;
 import org.powermock.modules.junit4.PowerMockRunner;
 
@@ -28,7 +27,10 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.*;
 import static org.mockito.Mockito.when;
-import static org.powermock.api.mockito.PowerMockito.*;
+import static org.powermock.api.mockito.PowerMockito.mockStatic;
+import static org.powermock.api.mockito.PowerMockito.verifyStatic;
+import static org.powermock.api.mockito.PowerMockito.whenNew;
+import static org.powermock.api.mockito.PowerMockito.verifyNew;
 
 /**
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
@@ -399,7 +401,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
         String path = "/foo/bar";
         doReturn(path).when(mockPath).getString();
         stat stat = new stat();
-        PowerMockito.mockStatic(GLFS.class);
+        mockStatic(GLFS.class);
         when(GLFS.glfs_lstat(volptr, path, stat)).thenReturn(-1);
         AccessMode accessMode = AccessMode.READ;
         provider.checkAccess(mockPath, accessMode);
@@ -414,7 +416,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
         doReturn(path).when(mockPath).getString();
         int mode = 4;
         stat stat = new stat();
-        PowerMockito.mockStatic(GLFS.class);
+        mockStatic(GLFS.class);
         when(GLFS.glfs_lstat(volptr, path, stat)).thenReturn(0);
         when(GLFS.glfs_access(volptr, path, mode)).thenReturn(-1);
         AccessMode accessMode = AccessMode.READ;
@@ -430,13 +432,13 @@ public class GlusterFileSystemProviderTest extends TestCase {
         doReturn(path).when(mockPath).getString();
         int mode = 4;
         stat stat = new stat();
-        PowerMockito.mockStatic(GLFS.class);
+        mockStatic(GLFS.class);
         when(GLFS.glfs_lstat(volptr, path, stat)).thenReturn(0);
         when(GLFS.glfs_access(volptr, path, mode)).thenReturn(0);
         AccessMode accessMode = AccessMode.READ;
         provider.checkAccess(mockPath, accessMode);
 
-        PowerMockito.verifyStatic();
+        verifyStatic();
         GLFS.glfs_access(volptr, path, mode);
 
         verify(mockPath).getFileSystem();
@@ -554,16 +556,46 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Files.createFile(targetPath);
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void testMoveFile_whenFirstPathRelative() throws IOException {
+        doReturn(false).when(mockPath).isAbsolute();
+        provider.move(mockPath, targetPath);
+    }
+    
+    @Test(expected = UnsupportedOperationException.class)
+    public void testMoveFile_whenSecondPathRelative() throws IOException {
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(false).when(targetPath).isAbsolute();
+        provider.move(mockPath, targetPath);
+    }
+    
+    @Test
+    public void testMoveFile_whenSameFile() throws IOException {
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
+        doReturn(true).when(provider).isSameFile(mockPath, targetPath);
+
+        provider.move(mockPath, targetPath);
+
+        verify(provider).isSameFile(mockPath, targetPath);
+        verify(mockPath, never()).getFileSystem();
+    }
+
     @Test(expected = AtomicMoveNotSupportedException.class)
     public void testMoveFile_whenAtomicMove() throws IOException {
         CopyOption copyOption = StandardCopyOption.ATOMIC_MOVE;
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         provider.move(mockPath, targetPath, copyOption);
     }
 
 
     @Test(expected = FileAlreadyExistsException.class)
     public void testMoveFile_whenTargetExists_andNoReplaceExisting() throws IOException {
-        Path targetPath = mockPath.resolveSibling("copy");
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
         mockStatic(Files.class);
         when(Files.exists(targetPath)).thenReturn(true);
         provider.move(mockPath, targetPath);
@@ -571,7 +603,9 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test(expected = DirectoryNotEmptyException.class)
     public void testMoveFile_whenTargetDirNotEmpty_andReplaceExisting() throws IOException {
-        Path targetPath = mockPath.resolveSibling("copy");
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
         mockStatic(Files.class);
         when(Files.isDirectory(targetPath)).thenReturn(true);
         doReturn(false).when(provider).directoryIsEmpty(targetPath);
@@ -580,6 +614,9 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test(expected = UnsupportedOperationException.class)
     public void testMoveFile_whenDifferentFilesystem() throws IOException {
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
         mockStatic(Files.class);
         when(Files.isDirectory(targetPath)).thenReturn(false);
         when(Files.exists(targetPath)).thenReturn(false);
@@ -592,6 +629,9 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test
     public void testMoveFile_whenTargetDoesNotExist() throws IOException {
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
         GlusterFileSystem mfs = Mockito.mock(GlusterFileSystem.class);
 
         mockStatic(Files.class);
@@ -617,10 +657,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
         verify(mockPath).getFileSystem();
         verify(targetPath).getFileSystem();
         verify(mfs).getVolptr();
+
         verifyStatic();
         Files.isDirectory(targetPath);
+        verifyStatic();
         Files.exists(targetPath);
-        Files.createFile(targetPath);
+        verifyStatic();
         GLFS.glfs_rename(volptr, srcPath, dstPath);
     }
 
