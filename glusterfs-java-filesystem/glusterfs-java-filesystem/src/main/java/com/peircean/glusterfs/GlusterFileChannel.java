@@ -98,8 +98,36 @@ public class GlusterFileChannel extends FileChannel {
 	}
 
 	@Override
-	public long read(ByteBuffer[] byteBuffers, int i, int i2) throws IOException {
-		return 0;  //To change body of implemented methods use File | Settings | File Templates.
+	public long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+        guardClosed();
+        if (length < 0 || length > byteBuffers.length - offset) {
+            throw new IndexOutOfBoundsException("Length provided is invalid.");
+        }
+        if (offset < 0 || offset > byteBuffers.length) {
+            throw new IndexOutOfBoundsException("Offset provided is invalid.");
+        }
+        if (!options.contains(StandardOpenOption.READ)) {
+            throw new NonReadableChannelException();
+        }
+
+        long totalRead = 0L;
+        boolean endOfStream = false;
+        for (int i = offset; i < length + offset; i++) {
+            byte[] bytes = byteBuffers[i].array();
+            int remaining = byteBuffers[i].remaining();
+            long read = GLFS.glfs_read(fileptr, bytes, remaining, 0);
+            if (read < 0) {
+                endOfStream = true;
+                break;
+            }
+            totalRead += read;
+        }
+
+        if (endOfStream && totalRead == 0) {
+            return -1;
+        }
+        position += totalRead;
+		return totalRead;
 	}
 
 	@Override
@@ -175,8 +203,31 @@ public class GlusterFileChannel extends FileChannel {
 	}
 
 	@Override
-	public int read(ByteBuffer byteBuffer, long l) throws IOException {
-		return 0;  //To change body of implemented methods use File | Settings | File Templates.
+	public int read(ByteBuffer byteBuffer, long position) throws IOException {
+		guardClosed();
+        if (position < 0) {
+            throw new IllegalArgumentException();
+        }
+        if (!options.contains(StandardOpenOption.READ)) {
+            throw new NonReadableChannelException();
+        }
+        if (position >= size()) {
+            return -1;
+        }
+        int whence = 0; //SEEK_SET
+        int seek = GLFS.glfs_lseek(fileptr, position, whence);
+        if (seek < 0) {
+            throw new IOException();
+        }
+        byte[] bytes = byteBuffer.array();
+        long read = GLFS.glfs_read(fileptr, bytes, bytes.length, 0);
+        seek = GLFS.glfs_lseek(fileptr, this.position, whence);
+
+        if (seek < 0) {
+            throw new IOException();
+        }
+
+        return (int) read;
 	}
 
 	@Override
