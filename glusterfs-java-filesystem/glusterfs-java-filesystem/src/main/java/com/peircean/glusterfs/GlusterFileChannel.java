@@ -112,15 +112,17 @@ public class GlusterFileChannel extends FileChannel {
 
         long totalRead = 0L;
         boolean endOfStream = false;
-        for (int i = offset; i < length + offset; i++) {
+        for (int i = offset; i < length + offset && !endOfStream; i++) {
             byte[] bytes = byteBuffers[i].array();
-            int remaining = byteBuffers[i].remaining();
-            long read = GLFS.glfs_read(fileptr, bytes, remaining, 0);
-            if (read < 0) {
-                endOfStream = true;
-                break;
+            int remaining;
+            while ((remaining = byteBuffers[i].remaining()) > 0) {
+                long read = GLFS.glfs_read(fileptr, bytes, remaining, 0);
+                if (read < 0) {
+                    endOfStream = true;
+                    break;
+                }
+                totalRead += read;
             }
-            totalRead += read;
         }
 
         if (endOfStream && totalRead == 0) {
