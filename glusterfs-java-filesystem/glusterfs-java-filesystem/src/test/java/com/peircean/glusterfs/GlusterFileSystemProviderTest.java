@@ -37,8 +37,8 @@ import static org.powermock.api.mockito.PowerMockito.verifyNew;
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({GLFS.class, GlusterFileSystemProvider.class, GlusterFileChannel.class, GlusterFileAttributes.class,
-        GlusterDirectoryStream.class, GlusterFileSystem.class, Files.class})
+@PrepareForTest({GLFS.class, Files.class, GlusterFileSystemProvider.class, GlusterFileChannel.class, GlusterFileAttributes.class,
+        GlusterDirectoryStream.class, GlusterFileSystem.class})
 public class GlusterFileSystemProviderTest extends TestCase {
 
     public static final String SERVER = "hostname";
@@ -584,10 +584,10 @@ public class GlusterFileSystemProviderTest extends TestCase {
     @Test
     public void testMoveFile_whenSameFile() throws IOException {
         mockStatic(Files.class);
-        PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
+        when(Files.exists(mockPath)).thenReturn(true);
 
         mockStatic(Files.class);
-        PowerMockito.when(Files.exists(targetPath)).thenReturn(true);
+        when(Files.exists(targetPath)).thenReturn(true);
 
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
