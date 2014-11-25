@@ -586,7 +586,6 @@ public class GlusterFileSystemProviderTest extends TestCase {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(true);
 
-        mockStatic(Files.class);
         when(Files.exists(targetPath)).thenReturn(true);
 
         doReturn(true).when(mockPath).isAbsolute();
@@ -609,8 +608,6 @@ public class GlusterFileSystemProviderTest extends TestCase {
     public void testMoveFile_whenAtomicMove() throws IOException {
         mockStatic(Files.class);
         PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
-
-        mockStatic(Files.class);
         PowerMockito.when(Files.exists(targetPath)).thenReturn(false);
 
         CopyOption copyOption = StandardCopyOption.ATOMIC_MOVE;
@@ -625,14 +622,11 @@ public class GlusterFileSystemProviderTest extends TestCase {
     public void testMoveFile_whenTargetExists_andNoReplaceExisting() throws IOException {
         mockStatic(Files.class);
         PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
-
-        mockStatic(Files.class);
         PowerMockito.when(Files.exists(targetPath)).thenReturn(true);
 
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
-        mockStatic(Files.class);
         when(Files.exists(targetPath)).thenReturn(true);
         provider.move(mockPath, targetPath);
     }
@@ -641,14 +635,11 @@ public class GlusterFileSystemProviderTest extends TestCase {
     public void testMoveFile_whenTargetDirNotEmpty_andReplaceExisting() throws IOException {
         mockStatic(Files.class);
         PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
-
-        mockStatic(Files.class);
         PowerMockito.when(Files.exists(targetPath)).thenReturn(true);
 
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
-        mockStatic(Files.class);
         when(Files.isDirectory(targetPath)).thenReturn(true);
         doReturn(false).when(provider).directoryIsEmpty(targetPath);
         provider.move(mockPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
@@ -658,14 +649,12 @@ public class GlusterFileSystemProviderTest extends TestCase {
     public void testMoveFile_whenDifferentFilesystem() throws IOException {
         mockStatic(Files.class);
         PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
-
-        mockStatic(Files.class);
         PowerMockito.when(Files.exists(targetPath)).thenReturn(false);
 
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
-        mockStatic(Files.class);
+
         when(Files.isDirectory(targetPath)).thenReturn(false);
         when(Files.exists(targetPath)).thenReturn(false);
 
@@ -679,8 +668,6 @@ public class GlusterFileSystemProviderTest extends TestCase {
     public void testMoveFile_whenTargetDoesNotExist() throws IOException {
         mockStatic(Files.class);
         PowerMockito.when(Files.exists(mockPath)).thenReturn(true);
-
-        mockStatic(Files.class);
         PowerMockito.when(Files.exists(targetPath)).thenReturn(false);
 
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
@@ -688,7 +675,6 @@ public class GlusterFileSystemProviderTest extends TestCase {
         doReturn(true).when(targetPath).isAbsolute();
         GlusterFileSystem mfs = Mockito.mock(GlusterFileSystem.class);
 
-        mockStatic(Files.class);
         when(Files.isDirectory(targetPath)).thenReturn(false);
         when(Files.exists(targetPath)).thenReturn(false);
         String srcPath = "/foo/src";
@@ -714,7 +700,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verifyStatic();
         Files.isDirectory(targetPath);
-        verifyStatic();
+        verifyStatic(times(2));
         Files.exists(targetPath);
         verifyStatic();
         GLFS.glfs_rename(volptr, srcPath, dstPath);
