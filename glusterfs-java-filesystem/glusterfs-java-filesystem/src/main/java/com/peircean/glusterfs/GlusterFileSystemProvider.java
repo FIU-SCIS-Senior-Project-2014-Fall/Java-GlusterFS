@@ -8,6 +8,7 @@ import lombok.Getter;
 
 import java.io.IOException;
 import java.net.URI;
+import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
@@ -17,6 +18,7 @@ import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -185,7 +187,14 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void copy(Path path, Path path2, CopyOption... copyOptions) throws IOException {
-        if (path.equals(path2)) {
+        if (!path.isAbsolute() || !path2.isAbsolute()) {
+            throw new UnsupportedOperationException("Relative paths not supported: " + path + " -> " + path2);
+        }
+        if(!Files.exists(path))
+        {
+            throw new NoSuchFileException(path.toString());
+        }
+        if (isSameFile(path, path2)) {
             return;
         }
 
@@ -230,8 +239,20 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
     }
 
     void copyFileContent(Path path, Path path2) throws IOException {
-        byte[] readBytes = Files.readAllBytes(path);
-        Files.write(path2, readBytes);
+        Set<StandardOpenOption> options = new HashSet<>();
+        options.add(StandardOpenOption.READ);
+
+        byte[] readBytes = new byte[65536];
+        FileChannel channel = newFileChannel(path, options);
+        ByteBuffer buffer = ByteBuffer.wrap(readBytes);
+        int read;
+
+        do {
+            read = channel.read(buffer);
+            Files.write(path2, readBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        }
+        while (read >= 0);
+        channel.close();
     }
 
     boolean directoryIsEmpty(Path path) throws IOException {
