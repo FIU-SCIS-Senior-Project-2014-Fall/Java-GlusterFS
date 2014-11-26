@@ -534,6 +534,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
     public void testCopyFile_whenSameFile() throws IOException {
         mockStatic(Files.class);
         when(Files.exists(mockPath)).thenReturn(true);
+        when(Files.exists(targetPath)).thenReturn(true);
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
         doReturn(true).when(provider).isSameFile(mockPath, targetPath);
@@ -542,6 +543,8 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verifyStatic();
         Files.exists(mockPath);
+        verifyStatic();
+        Files.exists(targetPath);
         verify(provider).isSameFile(mockPath, targetPath);
         verify(mockPath).isAbsolute();
         verify(targetPath).isAbsolute();
@@ -566,7 +569,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verifyStatic();
         Files.exists(mockPath);
-        verifyStatic();
+        verifyStatic(times(2));
         Files.exists(targetPath);
         verifyStatic();
         Files.isDirectory(targetPath);
@@ -575,7 +578,6 @@ public class GlusterFileSystemProviderTest extends TestCase {
         verifyStatic();
         Files.createDirectory(targetPath);
 
-        verify(provider).isSameFile(mockPath, targetPath);
         verify(targetPath).isAbsolute();
         verify(mockPath).isAbsolute();
     }
@@ -644,7 +646,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verifyStatic();
         Files.isDirectory(targetPath);
-        verifyStatic();
+        verifyStatic(times(2));
         Files.exists(targetPath);
         verifyStatic();
         Files.isDirectory(mockPath);
@@ -656,6 +658,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
         options.add(StandardOpenOption.READ);
 
         byte[] bytes = new byte[65536];
+        byte[] writeBytes = new byte[1];
 
         doReturn(mockChannel).when(provider).newFileChannel(mockPath, options);
         ByteBuffer mockBuffer = Mockito.mock(ByteBuffer.class);
@@ -663,13 +666,13 @@ public class GlusterFileSystemProviderTest extends TestCase {
         when(ByteBuffer.wrap(bytes)).thenReturn(mockBuffer);
         when(mockChannel.read(mockBuffer)).thenReturn(1, -1);
         mockStatic(Files.class);
-        when(Files.write(targetPath, bytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE)).thenReturn(targetPath);
+        when(Files.write(targetPath, writeBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE)).thenReturn(targetPath);
         doNothing().when(mockChannel).close();
 
         provider.copyFileContent(mockPath, targetPath);
 
-        verifyStatic(times(2));
-        Files.write(targetPath, bytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+        verifyStatic();
+        Files.write(targetPath, writeBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         verifyStatic();
         ByteBuffer.wrap(bytes);
         verify(mockChannel).close();
