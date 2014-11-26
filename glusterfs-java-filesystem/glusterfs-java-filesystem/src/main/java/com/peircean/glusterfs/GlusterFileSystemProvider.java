@@ -242,10 +242,17 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         FileChannel channel = newFileChannel(path, options);
         ByteBuffer readBuffer = ByteBuffer.wrap(readBytes);
 
+        boolean created = false;
         int read = channel.read(readBuffer);
+
         while (read > 0) {
             byte[] writeBytes = Arrays.copyOf(readBytes, read);
-            Files.write(path2, writeBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            if (!created) {
+                Files.write(path2, writeBytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+                created = true;
+            } else {
+                Files.write(path2, writeBytes, StandardOpenOption.APPEND);
+            }
             read = channel.read(readBuffer);
         }
         channel.close();
