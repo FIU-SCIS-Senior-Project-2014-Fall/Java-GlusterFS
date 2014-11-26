@@ -16,6 +16,7 @@ import org.powermock.modules.junit4.PowerMockRunner;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
@@ -36,8 +37,8 @@ import static org.powermock.api.mockito.PowerMockito.verifyZeroInteractions;
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
  */
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({GLFS.class, GlusterFileSystemProvider.class, GlusterFileChannel.class, GlusterFileAttributes.class,
-        GlusterDirectoryStream.class, GlusterFileSystem.class})
+@PrepareForTest({GLFS.class, Files.class, GlusterFileSystemProvider.class, GlusterFileChannel.class, GlusterFileAttributes.class,
+        GlusterDirectoryStream.class, GlusterFileSystem.class, ByteBuffer.class})
 public class GlusterFileSystemProviderTest extends TestCase {
 
     public static final String SERVER = "hostname";
@@ -498,22 +499,65 @@ public class GlusterFileSystemProviderTest extends TestCase {
         assertEquals(buf.f_bsize * buf.f_bfree, unallocatedSpace);
     }
 
+    @Test(expected = UnsupportedOperationException.class)
+    public void testCopyFile_whenFirstPathNotAbsolute() throws IOException {
+        copyFile_whenPathNotAbsoluteHelper(true);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testCopyFile_whenSecondPathNotAbsolute() throws IOException {
+        copyFile_whenPathNotAbsoluteHelper(false);
+    }
+
+    private void copyFile_whenPathNotAbsoluteHelper(boolean path) throws IOException {
+        if (path) {
+            when(mockPath.isAbsolute()).thenReturn(false);
+        } else {
+            when(mockPath.isAbsolute()).thenReturn(true);
+            when(targetPath.isAbsolute()).thenReturn(false);
+        }
+
+        provider.copy(mockPath, targetPath);
+    }
+
+    @Test(expected = NoSuchFileException.class)
+    public void testCopyFile_whenFirstPathDoesntExist() throws IOException {
+        mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(false);
+        when(mockPath.isAbsolute()).thenReturn(true);
+        when(targetPath.isAbsolute()).thenReturn(true);
+
+        provider.copy(mockPath, targetPath);
+    }
+
     @Test
-    public void testCopyFile_whenPathsEqual() throws IOException {
-        doReturn("/").when(mockFileSystem).getSeparator();
-        GlusterPath path1 = new GlusterPath(mockFileSystem, "/foo/bar");
-        GlusterPath path2 = new GlusterPath(mockFileSystem, "/foo/bar");
+    public void testCopyFile_whenSameFile() throws IOException {
+        mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(true);
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
+        doReturn(true).when(provider).isSameFile(mockPath, targetPath);
 
-        provider.copy(path1, path2);
+        provider.copy(mockPath, targetPath);
 
-        verify(mockFileSystem, times(6)).getSeparator();
-        verifyNoMoreInteractions(mockFileSystem);
-        verifyZeroInteractions(Files.class);
+        verifyStatic();
+        Files.exists(mockPath);
+        verify(provider).isSameFile(mockPath, targetPath);
+        verify(mockPath).isAbsolute();
+        verify(targetPath).isAbsolute();
+        verifyNoMoreInteractions(Files.class);
     }
 
     @Test
     public void testCopyFile_whenSourceIsDirectory() throws IOException {
+
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
+
         mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(true);
+        when(Files.exists(targetPath)).thenReturn(false);
         when(Files.isDirectory(targetPath)).thenReturn(false);
         when(Files.isDirectory(mockPath)).thenReturn(true);
         when(Files.createDirectory(targetPath)).thenReturn(targetPath);
@@ -521,11 +565,19 @@ public class GlusterFileSystemProviderTest extends TestCase {
         provider.copy(mockPath, targetPath);
 
         verifyStatic();
+        Files.exists(mockPath);
+        verifyStatic();
+        Files.exists(targetPath);
+        verifyStatic();
         Files.isDirectory(targetPath);
         verifyStatic();
         Files.isDirectory(mockPath);
         verifyStatic();
         Files.createDirectory(targetPath);
+
+        verify(provider).isSameFile(mockPath, targetPath);
+        verify(targetPath).isAbsolute();
+        verify(mockPath).isAbsolute();
     }
 
     @Test(expected = UnsupportedOperationException.class)
@@ -537,16 +589,22 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test(expected = FileAlreadyExistsException.class)
     public void testCopyFile_whenTargetExists_andNoReplaceExisting() throws IOException {
-        Path targetPath = mockPath.resolveSibling("copy");
         mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(true);
         when(Files.exists(targetPath)).thenReturn(true);
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         provider.copy(mockPath, targetPath);
     }
 
     @Test(expected = DirectoryNotEmptyException.class)
     public void testCopyFile_whenTargetDirNotEmpty_andReplaceExisting() throws IOException {
-        Path targetPath = mockPath.resolveSibling("copy");
         mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(true);
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         when(Files.isDirectory(targetPath)).thenReturn(true);
         doReturn(false).when(provider).directoryIsEmpty(targetPath);
         provider.copy(mockPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
@@ -563,12 +621,15 @@ public class GlusterFileSystemProviderTest extends TestCase {
     }
 
     void helperCopyFile(boolean attributes) throws IOException {
-        Path targetPath = mockPath.resolveSibling("copy");
+        doReturn(true).when(mockPath).isAbsolute();
+        doReturn(true).when(targetPath).isAbsolute();
         mockStatic(Files.class);
+        when(Files.exists(mockPath)).thenReturn(true);
         when(Files.isDirectory(targetPath)).thenReturn(false);
         when(Files.isDirectory(mockPath)).thenReturn(false);
         when(Files.exists(targetPath)).thenReturn(false);
         doNothing().when(provider).copyFileContent(mockPath, targetPath);
+        doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         if (attributes) {
             doNothing().when(provider).copyFileAttributes(mockPath, targetPath);
             provider.copy(mockPath, targetPath, StandardCopyOption.COPY_ATTRIBUTES);
@@ -591,17 +652,30 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
     @Test
     public void testCopyFileContent() throws IOException {
-        byte[] bytes = {0b1001000, 0b1100101, 0b1101100, 0b1101100, 0b1101111, 0b0100000, 0b1010111, 0b1101111, 0b1110010, 0b1101100, 0b1100100};
+        Set<StandardOpenOption> options = new HashSet<>();
+        options.add(StandardOpenOption.READ);
+
+        byte[] bytes = new byte[65536];
+
+        doReturn(mockChannel).when(provider).newFileChannel(mockPath, options);
+        ByteBuffer mockBuffer = Mockito.mock(ByteBuffer.class);
+        mockStatic(ByteBuffer.class);
+        when(ByteBuffer.wrap(bytes)).thenReturn(mockBuffer);
+        when(mockChannel.read(mockBuffer)).thenReturn(1, -1);
         mockStatic(Files.class);
-        when(Files.readAllBytes(mockPath)).thenReturn(bytes);
-        when(Files.write(targetPath, bytes)).thenReturn(targetPath);
+        when(Files.write(targetPath, bytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE)).thenReturn(targetPath);
+        doNothing().when(mockChannel).close();
 
         provider.copyFileContent(mockPath, targetPath);
 
+        verifyStatic(times(2));
+        Files.write(targetPath, bytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
         verifyStatic();
-        Files.readAllBytes(mockPath);
-        verifyStatic();
-        Files.write(targetPath, bytes);
+        ByteBuffer.wrap(bytes);
+        verify(mockChannel).close();
+        verify(mockChannel, times(2)).read(mockBuffer);
+        verify(provider).newFileChannel(mockPath, options);
+
     }
 
     @Test
