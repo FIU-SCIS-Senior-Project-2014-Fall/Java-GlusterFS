@@ -17,10 +17,7 @@ import java.nio.file.attribute.DosFileAttributes;
 import java.nio.file.attribute.FileAttribute;
 import java.nio.file.attribute.FileAttributeView;
 import java.nio.file.spi.FileSystemProvider;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 import static com.peircean.libgfapi_jni.internal.GLFS.*;
 
@@ -193,7 +190,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (!Files.exists(path)) {
             throw new NoSuchFileException(path.toString());
         }
-        if (isSameFile(path, path2)) {
+        if (Files.exists(path2) && isSameFile(path, path2)) {
             return;
         }
 
@@ -243,16 +240,14 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
         byte[] readBytes = new byte[65536];
         FileChannel channel = newFileChannel(path, options);
-        ByteBuffer buffer = ByteBuffer.wrap(readBytes);
-        int read;
+        ByteBuffer readBuffer = ByteBuffer.wrap(readBytes);
 
-        do {
-            read = channel.read(buffer);
-            if (read > 0) {
-                Files.write(path2, readBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
-            }
+        int read = channel.read(readBuffer);
+        while (read > 0) {
+            byte[] writeBytes = Arrays.copyOf(readBytes, read);
+            Files.write(path2, writeBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            read = channel.read(readBuffer);
         }
-        while (read >= 0);
         channel.close();
     }
 
