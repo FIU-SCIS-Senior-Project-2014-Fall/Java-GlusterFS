@@ -190,8 +190,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (!path.isAbsolute() || !path2.isAbsolute()) {
             throw new UnsupportedOperationException("Relative paths not supported: " + path + " -> " + path2);
         }
-        if(!Files.exists(path))
-        {
+        if (!Files.exists(path)) {
             throw new NoSuchFileException(path.toString());
         }
         if (isSameFile(path, path2)) {
@@ -249,7 +248,9 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
         do {
             read = channel.read(buffer);
-            Files.write(path2, readBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            if (read > 0) {
+                Files.write(path2, readBytes, StandardOpenOption.APPEND, StandardOpenOption.CREATE);
+            }
         }
         while (read >= 0);
         channel.close();
