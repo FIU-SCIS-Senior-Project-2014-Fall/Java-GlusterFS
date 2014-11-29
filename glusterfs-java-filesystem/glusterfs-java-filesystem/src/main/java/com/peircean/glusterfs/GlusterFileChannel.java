@@ -2,6 +2,7 @@ package com.peircean.glusterfs;
 
 import com.peircean.libgfapi_jni.internal.GLFS;
 import com.peircean.libgfapi_jni.internal.GlusterOpenOption;
+import com.peircean.libgfapi_jni.internal.UtilJNI;
 import com.peircean.libgfapi_jni.internal.structs.stat;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -93,6 +94,9 @@ public class GlusterFileChannel extends FileChannel {
 		guardClosed();
 		byte[] bytes = byteBuffer.array();
 		long read = GLFS.glfs_read(fileptr, bytes, bytes.length, 0);
+        if (read < 0) {
+            throw new IOException(UtilJNI.strerror());
+        }
 		position += read;
 		return (int) read;
 	}
@@ -226,7 +230,7 @@ public class GlusterFileChannel extends FileChannel {
         seek = GLFS.glfs_lseek(fileptr, this.position, whence);
 
         if (seek < 0) {
-            throw new IOException();
+            throw new IOException(UtilJNI.strerror());
         }
 
         return (int) read;
