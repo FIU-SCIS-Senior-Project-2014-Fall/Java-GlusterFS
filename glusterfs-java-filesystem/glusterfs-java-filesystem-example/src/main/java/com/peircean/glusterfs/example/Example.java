@@ -3,7 +3,10 @@ package com.peircean.glusterfs.example;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.*;
+import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.Properties;
 
@@ -36,34 +39,13 @@ public class Example {
         String symlinkStr = mountStr + "bar.symlink";
         String fakePathStr = mountStr + "fakePath";
 
-        Path volPath = Paths.get(new URI(mountStr));
-//        Path dirPath = Paths.get(".");
+        Path dirPath = Paths.get(new URI(dirStr));
+        Path barPath = Paths.get(new URI(barStr));
+        Path fooPath = Paths.get(new URI(fooStr));
+        Path foobarPath = Paths.get(new URI(foobarStr));
+        Path hardlinkPath = Paths.get(new URI(hardlinkStr));
+        Path symlinkPath = Paths.get(new URI(symlinkStr));
 
-        DirectoryStream<Path> stream = Files.newDirectoryStream(volPath);
-        for (Path p : stream) {
-            Path sibling = p.resolveSibling("hello2");
-            Path sibling2 = p.resolveSibling("hello3");
-//            Path target = p.relativize(sibling);
-            System.out.println(p + " " + (p.isAbsolute() ? "" : "(relative)"));
-//            System.out.println(target + " " + (target.isAbsolute() ? "" : "(relative)"));
-//            Path move = Files.move(p, target);
-            System.out.println(sibling + " " + (sibling.isAbsolute() ? "" : "(relative)"));
-            Path move = Files.move(sibling, sibling2);
-            System.out.println(move + " " + (move.isAbsolute() ? "" : "(relative)"));
-            break;
-        }
-//        Files.move()
-//        Path dirPath = Paths.get(new URI(dirStr));
-//        Path barPath = Paths.get(new URI(barStr));
-//        Path fooPath = Paths.get(new URI(fooStr));
-//        Path foobarPath = Paths.get(new URI(foobarStr));
-//        Path hardlinkPath = Paths.get(new URI(hardlinkStr));
-//        Path symlinkPath = Paths.get(new URI(symlinkStr));
-
-//        Path relPath = dirPath.relativize(barPath);
-//        System.out.println("Relative? " + relPath.isAbsolute());
-        
-/*
         System.out.println("May's contribution!\n");
         System.out.println("Let's create a directory called \"baz.\"");
         try{
@@ -137,6 +119,5 @@ public class Example {
         } catch (IOException e) {
             System.out.println("Nope!");
         }
-*/
     }
 }
