@@ -243,10 +243,10 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void move(Path path, Path path2, CopyOption... copyOptions) throws IOException {
-        if (!path.isAbsolute() || !path2.isAbsolute()) {
-            throw new UnsupportedOperationException("Relative paths not supported: " + path + " -> " + path2);
-        }
-        if (isSameFile(path, path2)) {
+        guardAbsolutePath(path);
+        guardAbsolutePath(path2);
+        guardFileExists(path);
+        if (Files.exists(path2) && isSameFile(path, path2)) {
             return;
         }
 
@@ -274,6 +274,18 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         GLFS.glfs_rename(((GlusterFileSystem) fileSystem).getVolptr(), ((GlusterPath) path).getString(), ((GlusterPath) path2).getString());
     }
 
+    void guardFileExists(Path path) throws NoSuchFileException {
+        if (!Files.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        }
+    }
+
+    void guardAbsolutePath(Path p) {
+        if (!p.isAbsolute()) {
+            throw new UnsupportedOperationException("Relative paths not supported: " + p);
+        }
+    }
+
     @Override
     public boolean isSameFile(Path path, Path path2) throws IOException {
         if (path.equals(path2)) {
@@ -282,13 +294,9 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (!path.getFileSystem().equals(path2.getFileSystem())) { //if file system differs, then we don't need to check provider; we know the files differ
             return false;
         }
-        if (!Files.exists(path)) {
-            throw new NoSuchFileException(path.toString());
-        }
-        if (!Files.exists(path2)) {
-            throw new NoSuchFileException(path2.toString());
-        }
-        
+        guardFileExists(path);
+        guardFileExists(path2);
+
         stat stat1 = statPath(path);
         stat stat2 = statPath(path2);
         
