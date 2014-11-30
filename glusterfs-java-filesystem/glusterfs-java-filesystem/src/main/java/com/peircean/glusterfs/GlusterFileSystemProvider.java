@@ -218,10 +218,10 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (!overwrite && targetExists) {
             throw new FileAlreadyExistsException("Target " + path2 + " exists and REPLACE_EXISTING not specified");
         }
-        if (Files.isDirectory(path2)) {
-            if (!directoryIsEmpty(path2)) {
-                throw new DirectoryNotEmptyException("Target not empty: " + path2);
-            }
+        if (Files.isDirectory(path2) && !directoryIsEmpty(path2)) {
+            throw new DirectoryNotEmptyException("Target not empty: " + path2);
+        }
+        if (Files.isDirectory(path)) {
             Files.createDirectory(path2);
         } else {
             Files.createFile(path2, PosixFilePermissions.asFileAttribute(defaultPerms));
