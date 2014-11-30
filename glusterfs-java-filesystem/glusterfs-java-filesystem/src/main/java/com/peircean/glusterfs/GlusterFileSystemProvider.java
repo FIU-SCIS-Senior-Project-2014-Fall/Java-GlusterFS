@@ -12,10 +12,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.channels.SeekableByteChannel;
 import java.nio.file.*;
-import java.nio.file.attribute.BasicFileAttributes;
-import java.nio.file.attribute.DosFileAttributes;
-import java.nio.file.attribute.FileAttribute;
-import java.nio.file.attribute.FileAttributeView;
+import java.nio.file.attribute.*;
 import java.nio.file.spi.FileSystemProvider;
 import java.util.*;
 
@@ -31,6 +28,15 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
     public static final String TCP = "tcp";
     @Getter(AccessLevel.PACKAGE)
     private static Map<String, GlusterFileSystem> cache = new HashMap<String, GlusterFileSystem>();
+    private static Set<PosixFilePermission> defaultPerms = new HashSet<>();
+
+    static {
+        defaultPerms.add(PosixFilePermission.OWNER_READ);
+        defaultPerms.add(PosixFilePermission.OWNER_WRITE);
+        defaultPerms.add(PosixFilePermission.GROUP_READ);
+        defaultPerms.add(PosixFilePermission.GROUP_WRITE);
+        defaultPerms.add(PosixFilePermission.OTHERS_READ);
+    }
 
     @Override
     public String getScheme() {
@@ -190,7 +196,8 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (!Files.exists(path)) {
             throw new NoSuchFileException(path.toString());
         }
-        if (Files.exists(path2) && isSameFile(path, path2)) {
+        boolean targetExists = Files.exists(path2);
+        if (targetExists && isSameFile(path, path2)) {
             return;
         }
 
@@ -208,15 +215,16 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
             }
         }
 
-        if (!overwrite && Files.exists(path2)) {
+        if (!overwrite && targetExists) {
             throw new FileAlreadyExistsException("Target " + path2 + " exists and REPLACE_EXISTING not specified");
         }
-        if (Files.isDirectory(path2) && !directoryIsEmpty(path2)) {
-            throw new DirectoryNotEmptyException("Target not empty: " + path2);
-        }
-        if (Files.isDirectory(path)) {
+        if (Files.isDirectory(path2)) {
+            if (!directoryIsEmpty(path2)) {
+                throw new DirectoryNotEmptyException("Target not empty: " + path2);
+            }
             Files.createDirectory(path2);
         } else {
+            Files.createFile(path2, PosixFilePermissions.asFileAttribute(defaultPerms));
             copyFileContent(path, path2);
             if (copyAttributes) {
                 copyFileAttributes(path, path2);
@@ -228,7 +236,10 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         stat stat = new stat();
         long volptr = ((GlusterFileSystem) path.getFileSystem()).getVolptr();
         int retStat = glfs_stat(volptr, path.toString(), stat);
-        int retChmod = glfs_chmod(volptr, path2.toString(), stat.st_mode);
+        int retChmod = 0;
+        if (0664 != stat.st_mode) {
+            retChmod = glfs_chmod(volptr, path2.toString(), stat.st_mode);
+        }
         if (retStat < 0 || retChmod < 0) {
             throw new IOException("Could not copy file attributes.");
         }
@@ -238,18 +249,18 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         Set<StandardOpenOption> options = new HashSet<>();
         options.add(StandardOpenOption.READ);
 
-        byte[] readBytes = new byte[65536];
+        byte[] readBytes = new byte[8192];
         FileChannel channel = newFileChannel(path, options);
         ByteBuffer readBuffer = ByteBuffer.wrap(readBytes);
 
-        boolean created = false;
+        boolean writtenTo = false;
         int read = channel.read(readBuffer);
 
         while (read > 0) {
             byte[] writeBytes = Arrays.copyOf(readBytes, read);
-            if (!created) {
-                Files.write(path2, writeBytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
-                created = true;
+            if (!writtenTo) {
+                Files.write(path2, writeBytes, StandardOpenOption.TRUNCATE_EXISTING);
+                writtenTo = true;
             } else {
                 Files.write(path2, writeBytes, StandardOpenOption.APPEND);
             }
