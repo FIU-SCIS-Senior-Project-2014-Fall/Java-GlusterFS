@@ -175,36 +175,36 @@ public class GlusterFileChannelTest extends TestCase {
 		GLFS.glfs_read(fileptr, bytes, bufferLength, 0);
 	}
 
-	@Test
-	public void testWrite1Arg() throws IOException {
-		doNothing().when(channel).guardClosed();
-		long fileptr = 1234l;
-		channel.setFileptr(fileptr);
+    @Test
+    public void testWrite1Arg() throws IOException {
+        doNothing().when(channel).guardClosed();
+        long fileptr = 1234L;
+        channel.setFileptr(fileptr);
 
-		byte[] bytes = new byte[]{'a', 'b'};
-		int bufferLength = bytes.length;
+        byte[] bytes = new byte[]{'a', 'b'};
+        int bufferLength = bytes.length;
 
-		mockStatic(GLFS.class);
-		when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
+        mockStatic(GLFS.class);
+        when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
 
-		doReturn(bytes).when(mockBuffer).array();
+        doReturn(bytes).when(mockBuffer).array();
 
-		int written = channel.write(mockBuffer);
+        int written = channel.write(mockBuffer);
 
-		assertEquals(bufferLength, written);
-
-		verify(channel).guardClosed();
-		verify(mockBuffer).array();
         assertEquals(bufferLength, written);
 
-		verifyStatic();
-		GLFS.glfs_write(fileptr, bytes, bufferLength, 0);
-	}
+        verify(channel).guardClosed();
+        verify(mockBuffer).array();
+        assertEquals(bufferLength, written);
+
+        verifyStatic();
+        GLFS.glfs_write(fileptr, bytes, bufferLength, 0);
+    }
 
     @Test(expected = IOException.class)
     public void testWrite1Arg_whenWriteError() throws IOException {
         doNothing().when(channel).guardClosed();
-        long fileptr = 1234l;
+        long fileptr = 1234L;
         channel.setFileptr(fileptr);
 
         byte[] bytes = new byte[]{'a', 'b'};

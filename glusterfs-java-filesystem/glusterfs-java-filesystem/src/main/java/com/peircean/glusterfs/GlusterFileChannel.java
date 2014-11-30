@@ -109,6 +109,7 @@ public class GlusterFileChannel extends FileChannel {
             throw new IOException(UtilJNI.strerror());
         }
         position += written;
+        byteBuffer.position(written);
         return written;
     }
 
@@ -136,6 +137,7 @@ public class GlusterFileChannel extends FileChannel {
                     throw new IOException();
                 }
                 position += written;
+                byteBuffers[i].position(written);
                 totalWritten += written;
                 remaining = byteBuffers[i].remaining();
             }
