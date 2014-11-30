@@ -20,8 +20,7 @@ import java.nio.ByteBuffer;
 import java.nio.channels.ByteChannel;
 import java.nio.channels.FileChannel;
 import java.nio.file.*;
-import java.nio.file.attribute.DosFileAttributes;
-import java.nio.file.attribute.FileAttribute;
+import java.nio.file.attribute.*;
 import java.util.*;
 
 import static org.mockito.Mockito.doNothing;
@@ -38,7 +37,7 @@ import static org.powermock.api.mockito.PowerMockito.verifyZeroInteractions;
  */
 @RunWith(PowerMockRunner.class)
 @PrepareForTest({GLFS.class, Files.class, GlusterFileSystemProvider.class, GlusterFileChannel.class, GlusterFileAttributes.class,
-        GlusterDirectoryStream.class, GlusterFileSystem.class, ByteBuffer.class})
+        GlusterDirectoryStream.class, GlusterFileSystem.class, ByteBuffer.class, PosixFilePermissions.class})
 public class GlusterFileSystemProviderTest extends TestCase {
 
     public static final String SERVER = "hostname";
@@ -569,7 +568,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verifyStatic();
         Files.exists(mockPath);
-        verifyStatic(times(2));
+        verifyStatic();
         Files.exists(targetPath);
         verifyStatic();
         Files.isDirectory(targetPath);
@@ -623,6 +622,8 @@ public class GlusterFileSystemProviderTest extends TestCase {
     }
 
     void helperCopyFile(boolean attributes) throws IOException {
+        FileAttribute mockAttributes = Mockito.mock(FileAttribute.class);
+
         doReturn(true).when(mockPath).isAbsolute();
         doReturn(true).when(targetPath).isAbsolute();
         mockStatic(Files.class);
@@ -630,6 +631,9 @@ public class GlusterFileSystemProviderTest extends TestCase {
         when(Files.isDirectory(targetPath)).thenReturn(false);
         when(Files.isDirectory(mockPath)).thenReturn(false);
         when(Files.exists(targetPath)).thenReturn(false);
+        mockStatic(PosixFilePermissions.class);
+        when(PosixFilePermissions.asFileAttribute(any(Set.class))).thenReturn(mockAttributes);
+        when(Files.createFile(targetPath, mockAttributes)).thenReturn(null);
         doNothing().when(provider).copyFileContent(mockPath, targetPath);
         doReturn(false).when(provider).isSameFile(mockPath, targetPath);
         if (attributes) {
@@ -646,10 +650,15 @@ public class GlusterFileSystemProviderTest extends TestCase {
 
         verifyStatic();
         Files.isDirectory(targetPath);
-        verifyStatic(times(2));
+        verifyStatic();
         Files.exists(targetPath);
         verifyStatic();
         Files.isDirectory(mockPath);
+        verifyStatic();
+        Files.createFile(targetPath, mockAttributes);
+        verifyStatic();
+        PosixFilePermissions.asFileAttribute(any(Set.class));
+
     }
 
     @Test
@@ -657,7 +666,7 @@ public class GlusterFileSystemProviderTest extends TestCase {
         Set<StandardOpenOption> options = new HashSet<>();
         options.add(StandardOpenOption.READ);
 
-        byte[] bytes = new byte[65536];
+        byte[] bytes = new byte[8192];
         byte[] writeBytes = new byte[1];
 
         doReturn(mockChannel).when(provider).newFileChannel(mockPath, options);
@@ -666,14 +675,14 @@ public class GlusterFileSystemProviderTest extends TestCase {
         when(ByteBuffer.wrap(bytes)).thenReturn(mockBuffer);
         when(mockChannel.read(mockBuffer)).thenReturn(1, 1, -1);
         mockStatic(Files.class);
-        when(Files.write(targetPath, writeBytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE)).thenReturn(targetPath);
+        when(Files.write(targetPath, writeBytes, StandardOpenOption.TRUNCATE_EXISTING)).thenReturn(targetPath);
         when(Files.write(targetPath, writeBytes, StandardOpenOption.APPEND)).thenReturn(targetPath);
         doNothing().when(mockChannel).close();
 
         provider.copyFileContent(mockPath, targetPath);
 
         verifyStatic();
-        Files.write(targetPath, writeBytes, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.CREATE);
+        Files.write(targetPath, writeBytes, StandardOpenOption.TRUNCATE_EXISTING);
         verifyStatic();
         Files.write(targetPath, writeBytes, StandardOpenOption.APPEND);
         verifyStatic();
