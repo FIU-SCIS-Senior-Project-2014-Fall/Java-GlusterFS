@@ -101,8 +101,8 @@ public class GlusterFileChannel extends FileChannel {
 		return (int) read;
 	}
 
-	@Override
-	public long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+    @Override
+    public long read(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
         guardClosed();
         if (length < 0 || length > byteBuffers.length - offset) {
             throw new IndexOutOfBoundsException("Length provided is invalid.");
@@ -115,6 +115,18 @@ public class GlusterFileChannel extends FileChannel {
         }
 
         long totalRead = 0L;
+        try {
+            totalRead = readHelper(byteBuffers, offset, length);
+        } finally {
+            if (totalRead > 0) {
+                position += totalRead;
+            }
+        }
+        return totalRead;
+    }
+
+    private long readHelper(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+        long totalRead = 0L;
         boolean endOfStream = false;
         for (int i = offset; i < length + offset && !endOfStream; i++) {
             byte[] bytes = byteBuffers[i].array();
@@ -122,19 +134,22 @@ public class GlusterFileChannel extends FileChannel {
             while ((remaining = byteBuffers[i].remaining()) > 0) {
                 long read = GLFS.glfs_read(fileptr, bytes, remaining, 0);
                 if (read < 0) {
+                    throw new IOException(UtilJNI.strerror());
+                }
+                totalRead += read;
+                if (0 == read) {
                     endOfStream = true;
                     break;
                 }
-                totalRead += read;
             }
         }
 
         if (endOfStream && totalRead == 0) {
             return -1;
         }
-        position += totalRead;
-		return totalRead;
-	}
+
+        return totalRead;
+    }
 
 	@Override
 	public int write(ByteBuffer byteBuffer) throws IOException {
