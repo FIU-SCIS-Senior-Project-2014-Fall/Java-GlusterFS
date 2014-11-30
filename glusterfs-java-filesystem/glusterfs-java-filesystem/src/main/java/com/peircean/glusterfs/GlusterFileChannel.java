@@ -98,7 +98,7 @@ public class GlusterFileChannel extends FileChannel {
             throw new IOException(UtilJNI.strerror());
         }
 		position += read;
-        byteBuffer.position(read);
+        byteBuffer.position((int)read);
 		return (int) read;
 	}
 
