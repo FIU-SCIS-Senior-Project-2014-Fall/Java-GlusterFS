@@ -2,6 +2,7 @@ package com.peircean.glusterfs;
 
 import com.peircean.libgfapi_jni.internal.GLFS;
 import com.peircean.libgfapi_jni.internal.GlusterOpenOption;
+import com.peircean.libgfapi_jni.internal.UtilJNI;
 import com.peircean.libgfapi_jni.internal.structs.stat;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -99,14 +100,17 @@ public class GlusterFileChannel extends FileChannel {
 		return 0;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 
-	@Override
-	public int write(ByteBuffer byteBuffer) throws IOException {
-		guardClosed();
-		byte[] buf = byteBuffer.array();
-		int written = GLFS.glfs_write(fileptr, buf, buf.length, 0);
-		byteBuffer.position(written);
-		return written;
-	}
+    @Override
+    public int write(ByteBuffer byteBuffer) throws IOException {
+        guardClosed();
+        byte[] buf = byteBuffer.array();
+        int written = GLFS.glfs_write(fileptr, buf, buf.length, 0);
+        if (written < 0) {
+            throw new IOException(UtilJNI.strerror());
+        }
+        position += written;
+        return written;
+    }
 
     @Override
     public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
@@ -131,7 +135,7 @@ public class GlusterFileChannel extends FileChannel {
                 if (written < 0) {
                     throw new IOException();
                 }
-                byteBuffers[i].position(written);
+                position += written;
                 totalWritten += written;
                 remaining = byteBuffers[i].remaining();
             }
