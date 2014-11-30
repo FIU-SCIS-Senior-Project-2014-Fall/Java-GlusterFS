@@ -150,7 +150,7 @@ public class GlusterFileChannelTest extends TestCase {
     @Test
     public void testRead1Arg() throws IOException {
         doNothing().when(channel).guardClosed();
-        long fileptr = 1234l;
+        long fileptr = 1234L;
         channel.setFileptr(fileptr);
 
         byte[] bytes = new byte[]{'a', 'b', 'c'};
@@ -162,6 +162,7 @@ public class GlusterFileChannelTest extends TestCase {
         when(GLFS.glfs_read(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
 
         doReturn(bytes).when(mockBuffer).array();
+        doReturn(null).when(mockBuffer).position((int) bufferLength);
 
         int read = channel.read(mockBuffer);
 
@@ -169,6 +170,7 @@ public class GlusterFileChannelTest extends TestCase {
 
         verify(channel).guardClosed();
         verify(mockBuffer).array();
+        verify(mockBuffer).position((int) bufferLength);
         assertEquals(bufferLength + offset, channel.getPosition());
 
         verifyStatic();
@@ -178,7 +180,7 @@ public class GlusterFileChannelTest extends TestCase {
     @Test(expected = IOException.class)
     public void testRead1Arg_whenReadError() throws IOException {
         doNothing().when(channel).guardClosed();
-        long fileptr = 1234l;
+        long fileptr = 1234L;
         channel.setFileptr(fileptr);
 
         byte[] bytes = new byte[]{'a', 'b', 'c'};
@@ -190,6 +192,7 @@ public class GlusterFileChannelTest extends TestCase {
         when(GLFS.glfs_read(fileptr, bytes, bufferLength, 0)).thenReturn(-1L);
 
         doReturn(bytes).when(mockBuffer).array();
+        doReturn(null).when(mockBuffer).position((int) bufferLength);
 
         channel.read(mockBuffer);
     }
