@@ -186,7 +186,7 @@ public class GlusterFileChannelTest extends TestCase {
 
         mockStatic(GLFS.class);
         when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
-
+        doReturn(null).when(mockBuffer).position(bufferLength);
         doReturn(bytes).when(mockBuffer).array();
 
         int written = channel.write(mockBuffer);
@@ -195,6 +195,7 @@ public class GlusterFileChannelTest extends TestCase {
 
         verify(channel).guardClosed();
         verify(mockBuffer).array();
+        verify(mockBuffer).position(bufferLength);
         assertEquals(bufferLength, written);
 
         verifyStatic();
