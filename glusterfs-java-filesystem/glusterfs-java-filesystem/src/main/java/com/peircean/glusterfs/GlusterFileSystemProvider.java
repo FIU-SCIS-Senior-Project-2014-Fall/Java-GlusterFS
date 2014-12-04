@@ -28,15 +28,6 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
     public static final String TCP = "tcp";
     @Getter(AccessLevel.PACKAGE)
     private static Map<String, GlusterFileSystem> cache = new HashMap<String, GlusterFileSystem>();
-    private static Set<PosixFilePermission> defaultPerms = new HashSet<>();
-
-    static {
-        defaultPerms.add(PosixFilePermission.OWNER_READ);
-        defaultPerms.add(PosixFilePermission.OWNER_WRITE);
-        defaultPerms.add(PosixFilePermission.GROUP_READ);
-        defaultPerms.add(PosixFilePermission.GROUP_WRITE);
-        defaultPerms.add(PosixFilePermission.OTHERS_READ);
-    }
 
     @Override
     public String getScheme() {
@@ -224,7 +215,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (Files.isDirectory(path)) {
             Files.createDirectory(path2);
         } else {
-            Files.createFile(path2, PosixFilePermissions.asFileAttribute(defaultPerms));
+            Files.createFile(path2, PosixFilePermissions.asFileAttribute(PosixFilePermissions.fromString("rw-rw-r--")));
             copyFileContent(path, path2);
             if (copyAttributes) {
                 copyFileAttributes(path, path2);
