@@ -222,4 +222,11 @@ public class GLFS {
             @JniArg(cast = "const char *") String oldpath,
             @JniArg(cast = "const char *") String newpath
     );
+
+    //  int glfs_chmod (glfs_t *fs, const char *path, int mode);
+    public static final native int glfs_chmod(
+            @JniArg(cast = "glfs_t *") long fs,
+            @JniArg(cast = "const char *") String path,
+            int mode
+    );
 }
