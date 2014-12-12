@@ -31,8 +31,6 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.mockito.Mockito.*;
-import static org.powermock.api.mockito.PowerMockito.mockStatic;
-import static org.powermock.api.mockito.PowerMockito.verifyStatic;
 
 /**
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
@@ -107,10 +105,10 @@ public class GlusterFileChannelTest extends TestCase {
 		doReturn(pathUri).when(mockPath).toUri();
 		doReturn(flags).when(channel).parseOptions(options);
 
-        mockStatic(GlusterFileAttributes.class);
+        PowerMockito.mockStatic(GlusterFileAttributes.class);
         when(GlusterFileAttributes.parseAttrs(attrs)).thenReturn(mode);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		if (null != option) {
 			when(GLFS.glfs_creat(volptr, path, flags, mode)).thenReturn(createptr);
 		} else {
@@ -128,14 +126,14 @@ public class GlusterFileChannelTest extends TestCase {
 		verify(mockPath).toUri();
 		verify(channel).parseOptions(options);
 
-        verifyStatic();
+        PowerMockito.verifyStatic();
         GlusterFileAttributes.parseAttrs(attrs);
 
 		if (null != option) {
-			verifyStatic();
+			PowerMockito.verifyStatic();
 			GLFS.glfs_creat(volptr, path, flags, mode);
 		} else {
-			verifyStatic();
+			PowerMockito.verifyStatic();
 			GLFS.glfs_open(volptr, path, flags);
 		}
 	}
@@ -162,7 +160,7 @@ public class GlusterFileChannelTest extends TestCase {
 		long offset = 4;
 		channel.setPosition(offset);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_read(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
 
 		doReturn(bytes).when(mockBuffer).array();
@@ -175,52 +173,36 @@ public class GlusterFileChannelTest extends TestCase {
 		verify(mockBuffer).array();
 		assertEquals(bufferLength + offset, channel.getPosition());
 
-		verifyStatic();
+		PowerMockito.verifyStatic();
 		GLFS.glfs_read(fileptr, bytes, bufferLength, 0);
 	}
 
-    @Test
-    public void testWrite1Arg() throws IOException {
-        doNothing().when(channel).guardClosed();
-        long fileptr = 1234L;
-        channel.setFileptr(fileptr);
+	@Test
+	public void testWrite1Arg() throws IOException {
+		doNothing().when(channel).guardClosed();
+		long fileptr = 1234l;
+		channel.setFileptr(fileptr);
 
-        byte[] bytes = new byte[]{'a', 'b'};
-        int bufferLength = bytes.length;
+		byte[] bytes = new byte[]{'a', 'b'};
+		int bufferLength = bytes.length;
 
-        mockStatic(GLFS.class);
-        when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
-        doReturn(null).when(mockBuffer).position(bufferLength);
-        doReturn(bytes).when(mockBuffer).array();
+		PowerMockito.mockStatic(GLFS.class);
+		when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
 
-        int written = channel.write(mockBuffer);
+		doReturn(bytes).when(mockBuffer).array();
+		doReturn(null).when(mockBuffer).position(bufferLength);
 
-        assertEquals(bufferLength, written);
+		int written = channel.write(mockBuffer);
 
-        verify(channel).guardClosed();
-        verify(mockBuffer).array();
-        verify(mockBuffer).position(bufferLength);
-        assertEquals(bufferLength, written);
+		assertEquals(bufferLength, written);
 
-        verifyStatic();
-        GLFS.glfs_write(fileptr, bytes, bufferLength, 0);
-    }
+		verify(channel).guardClosed();
+		verify(mockBuffer).array();
+		verify(mockBuffer).position(bufferLength);
 
-    @Test(expected = IOException.class)
-    public void testWrite1Arg_whenWriteError() throws IOException {
-        doNothing().when(channel).guardClosed();
-        long fileptr = 1234L;
-        channel.setFileptr(fileptr);
-
-        byte[] bytes = new byte[]{'a', 'b'};
-        int bufferLength = bytes.length;
-
-        mockStatic(GLFS.class);
-        when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(-1);
-        doReturn(bytes).when(mockBuffer).array();
-
-        channel.write(mockBuffer);
-    }
+		PowerMockito.verifyStatic();
+		GLFS.glfs_write(fileptr, bytes, bufferLength, 0);
+	}
 
 	@Test
 	public void testWrite3Arg() throws IOException {
@@ -530,7 +512,7 @@ public class GlusterFileChannelTest extends TestCase {
 		channel.setFileptr(fileptr);
 		long position = 12345l;
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_lseek(fileptr, position, 0)).thenReturn(0);
 		FileChannel returnedChannel = channel.position(position);
 
@@ -538,7 +520,7 @@ public class GlusterFileChannelTest extends TestCase {
 		assertEquals(channel, returnedChannel);
 		assertEquals(position, channel.getPosition());
 
-		verifyStatic();
+		PowerMockito.verifyStatic();
 		GLFS.glfs_lseek(fileptr, position, 0);
 	}
 
@@ -547,7 +529,7 @@ public class GlusterFileChannelTest extends TestCase {
 		long fileptr = 1234l;
 		channel.setFileptr(fileptr);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_fsync(fileptr)).thenReturn(-1);
 
 		channel.force(true);
@@ -559,12 +541,12 @@ public class GlusterFileChannelTest extends TestCase {
 		long fileptr = 1234l;
 		channel.setFileptr(fileptr);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_fsync(fileptr)).thenReturn(0);
 
 		channel.force(true);
 		verify(channel).guardClosed();
-		verifyStatic();
+		PowerMockito.verifyStatic();
 		GLFS.glfs_fsync(fileptr);
 	}
 
@@ -573,7 +555,7 @@ public class GlusterFileChannelTest extends TestCase {
 		long fileptr = 1234l;
 		channel.setFileptr(fileptr);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_close(fileptr)).thenReturn(1);
 
 		channel.implCloseChannel();
@@ -585,14 +567,14 @@ public class GlusterFileChannelTest extends TestCase {
 		long fileptr = 1234l;
 		channel.setFileptr(fileptr);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_close(fileptr)).thenReturn(0);
 
 		channel.implCloseChannel();
 
 		assertTrue(channel.isClosed());
 
-		verifyStatic(never());
+		PowerMockito.verifyStatic(never());
 		GLFS.glfs_close(fileptr);
 	}
 
@@ -601,14 +583,14 @@ public class GlusterFileChannelTest extends TestCase {
 		long fileptr = 1234l;
 		channel.setFileptr(fileptr);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_close(fileptr)).thenReturn(0);
 
 		channel.implCloseChannel();
 
 		assertTrue(channel.isClosed());
 
-		verifyStatic();
+		PowerMockito.verifyStatic();
 		GLFS.glfs_close(fileptr);
 	}
 
@@ -623,14 +605,14 @@ public class GlusterFileChannelTest extends TestCase {
 
 		PowerMockito.whenNew(stat.class).withNoArguments().thenReturn(stat);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_fstat(fileptr, stat)).thenReturn(0);
 
 		long size = channel.size();
 
 		assertEquals(actualSize, size);
 
-		verifyStatic();
+		PowerMockito.verifyStatic();
 		GLFS.glfs_fstat(fileptr, stat);
 	}
 
@@ -645,7 +627,7 @@ public class GlusterFileChannelTest extends TestCase {
 
 		PowerMockito.whenNew(stat.class).withNoArguments().thenReturn(stat);
 
-		mockStatic(GLFS.class);
+		PowerMockito.mockStatic(GLFS.class);
 		when(GLFS.glfs_fstat(fileptr, stat)).thenReturn(-1);
 
 		long size = channel.size();
