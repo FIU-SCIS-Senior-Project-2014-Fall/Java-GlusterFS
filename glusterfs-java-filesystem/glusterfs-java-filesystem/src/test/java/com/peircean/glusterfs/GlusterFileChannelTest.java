@@ -179,49 +179,6 @@ public class GlusterFileChannelTest extends TestCase {
 		GLFS.glfs_read(fileptr, bytes, bufferLength, 0);
 	}
 
-    @Test
-    public void testWrite1Arg() throws IOException {
-        doNothing().when(channel).guardClosed();
-        long fileptr = 1234L;
-        channel.setFileptr(fileptr);
-
-        byte[] bytes = new byte[]{'a', 'b'};
-        int bufferLength = bytes.length;
-
-        mockStatic(GLFS.class);
-        when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(bufferLength);
-        doReturn(null).when(mockBuffer).position(bufferLength);
-        doReturn(bytes).when(mockBuffer).array();
-
-        int written = channel.write(mockBuffer);
-
-        assertEquals(bufferLength, written);
-
-        verify(channel).guardClosed();
-        verify(mockBuffer).array();
-        verify(mockBuffer).position(bufferLength);
-        assertEquals(bufferLength, written);
-
-        verifyStatic();
-        GLFS.glfs_write(fileptr, bytes, bufferLength, 0);
-    }
-
-    @Test(expected = IOException.class)
-    public void testWrite1Arg_whenWriteError() throws IOException {
-        doNothing().when(channel).guardClosed();
-        long fileptr = 1234L;
-        channel.setFileptr(fileptr);
-
-        byte[] bytes = new byte[]{'a', 'b'};
-        int bufferLength = bytes.length;
-
-        mockStatic(GLFS.class);
-        when(GLFS.glfs_write(fileptr, bytes, bufferLength, 0)).thenReturn(-1);
-        doReturn(bytes).when(mockBuffer).array();
-
-        channel.write(mockBuffer);
-    }
-
 	@Test
 	public void testWrite3Arg() throws IOException {
 		doNothing().when(channel).guardClosed();
@@ -252,29 +209,6 @@ public class GlusterFileChannelTest extends TestCase {
 
 		verify(mockOptions).contains(StandardOpenOption.WRITE);
 		verify(channel).guardClosed();
-	}
-
-	@Test(expected = IOException.class)
-	public void testWrite3Arg_whenWriteError() throws IOException {
-		doNothing().when(channel).guardClosed();
-		long fileptr = 1234L;
-		channel.setFileptr(fileptr);
-		Set<? extends OpenOption> mockOptions = Mockito.mock(Set.class);
-		channel.setOptions(mockOptions);
-		doReturn(true).when(mockOptions).contains(StandardOpenOption.WRITE);
-
-		byte[] bytes1 = new byte[10];
-		byte[] bytes2 = new byte[10];
-		ByteBuffer buffer1 = ByteBuffer.wrap(bytes1);
-		ByteBuffer buffer2 = ByteBuffer.wrap(bytes2);
-		ByteBuffer[] buffers = new ByteBuffer[]{buffer1, buffer2};
-		int length = 2;
-		int offset = 0;
-
-		mockStatic(GLFS.class);
-		when(GLFS.glfs_write(fileptr, bytes1, 10, 0)).thenReturn(-1);
-
-		channel.write(buffers, offset, length);
 	}
 
 	@Test(expected = NonWritableChannelException.class)

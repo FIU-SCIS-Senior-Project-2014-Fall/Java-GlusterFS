@@ -240,7 +240,7 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         int retStat = glfs_stat(volptr, path.toString(), stat);
         int retChmod = 0;
         if (0664 != stat.st_mode) {
-            retChmod = glfs_chmod(volptr, path2.toString(), stat.st_mode);
+            retChmod = GLFS.glfs_chmod(volptr, path2.toString(), stat.st_mode);
         }
         if (retStat < 0 || retChmod < 0) {
             throw new IOException("Could not copy file attributes.");
