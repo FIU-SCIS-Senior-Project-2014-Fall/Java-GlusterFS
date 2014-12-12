@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CompilerConfiguration">
+    <option name="DEFAULT_COMPILER" value="Javac" />
+    <resourceExtensions />
+    <wildcardResourcePatterns>
+      <entry name="!?*.java" />
+      <entry name="!?*.form" />
+      <entry name="!?*.class" />
+      <entry name="!?*.groovy" />
+      <entry name="!?*.scala" />
+      <entry name="!?*.flex" />
+      <entry name="!?*.kt" />
+      <entry name="!?*.clj" />
+    </wildcardResourcePatterns>
+    <annotationProcessing>
+      <profile default="true" name="Default" enabled="false">
+        <processorPath useClasspath="true" />
+      </profile>
+      <profile default="false" name="Maven default annotation processors profile" enabled="true">
+        <sourceOutputDir name="target/generated-sources/annotations" />
+        <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
+        <outputRelativeToContentRoot value="true" />
+        <processorPath useClasspath="true" />
+        <module name="glusterfs-java-filesystem" />
+        <module name="glusterfs-java-filesystem-example" />
+        <module name="libgfapi-all" />
+        <module name="libgfapi-jni" />
+        <module name="libgfapi-linux64" />
+      </profile>
+    </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="glusterfs-java-filesystem" target="1.7" />
+      <module name="glusterfs-java-filesystem-example" target="1.7" />
+      <module name="glusterfs-java-filesystem-project" target="1.7" />
+      <module name="libgfapi-all" target="1.5" />
+      <module name="libgfapi-jni" target="1.5" />
+      <module name="libgfapi-linux64" target="1.5" />
+      <module name="libgfapi-project" target="1.5" />
+    </bytecodeTargetLevel>
+  </component>
+</project>
+
