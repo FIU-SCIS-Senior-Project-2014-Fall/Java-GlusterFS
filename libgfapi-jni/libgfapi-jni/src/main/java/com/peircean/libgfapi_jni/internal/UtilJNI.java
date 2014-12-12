@@ -6,10 +6,9 @@ import org.fusesource.hawtjni.runtime.JniClass;
 import org.fusesource.hawtjni.runtime.JniMethod;
 
 import static org.fusesource.hawtjni.runtime.MethodFlag.CONSTANT_GETTER;
-import static org.fusesource.hawtjni.runtime.MethodFlag.CONSTANT_INITIALIZER;
 
 @JniClass
-class UtilJNI {
+public class UtilJNI {
 
     static {
         GLFS.LIBRARY.load();

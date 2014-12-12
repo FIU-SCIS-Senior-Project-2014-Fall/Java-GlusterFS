@@ -48,4 +48,5 @@ In another terminal:
 
 ##Concerns
 
-* If no permissions are specified, creation of a directory will default to rwxrwxr-x. The default behavior is concerned with the umask and changes the default permission set based on the formula 0777 & ~umask. We don't feel this is an imperative difference in behavior, so we are leaving it a a potential to do later.
+* If no permissions are specified, creation of a directory will default to rwxrwxr-x. The default behavior is concerned with the umask and changes the default permission set based on the formula 0777 & ~umask. We don't want to make the Java GlusterFS project explicitly tied to the Linux platform, so we're leaving this as is.
+* Move and copy treat symlinks as if they are the same as the file the link points to. This results in a move or copy operation -- move/copy(symlink, file_link_points_to) -- returning without taking any action. We may revisit this at some future date, but it's unimportant at present.

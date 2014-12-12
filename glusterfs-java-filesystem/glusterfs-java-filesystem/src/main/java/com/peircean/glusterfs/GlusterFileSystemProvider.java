@@ -168,15 +168,26 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void delete(Path path) throws IOException {
-//        GlusterFileAttributes glusterFileAttributes = readAttributes(path, GlusterFileAttributes.class, LinkOption.NOFOLLOW_LINKS);
-//        if ()
-//
-//        GlusterFileSystem fileSystem = (GlusterFileSystem) path.getFileSystem();
-//        int unl = GLFS.glfs_unlink(fileSystem.getVolptr(), ((GlusterPath) path).getString());
-//        if (-1 == unl) {
-//            throw new IOException();
-//        }
+        if (!Files.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        }
+        if (Files.isDirectory(path)) {
+            if(!directoryIsEmpty(path)) {
+                throw new DirectoryNotEmptyException(path.toString());
+            }
 
+            int ret = GLFS.glfs_rmdir(((GlusterFileSystem)path.getFileSystem()).getVolptr(), path.toString());
+
+            if (ret < 0) {
+                throw new IOException(path.toString());
+            }
+        } else {
+            int ret = GLFS.glfs_unlink(((GlusterFileSystem) path.getFileSystem()).getVolptr(), path.toString());
+
+            if (ret < 0) {
+                throw new IOException(path.toString());
+            }
+        }
     }
 
     @Override
@@ -271,6 +282,13 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
 
     @Override
     public void move(Path path, Path path2, CopyOption... copyOptions) throws IOException {
+        guardAbsolutePath(path);
+        guardAbsolutePath(path2);
+        guardFileExists(path);
+        if (Files.exists(path2) && isSameFile(path, path2)) {
+            return;
+        }
+
         boolean overwrite = false;
         for (CopyOption co : copyOptions) {
             if (StandardCopyOption.ATOMIC_MOVE.equals(co)) {
@@ -280,17 +298,31 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
                 overwrite = true;
             }
         }
-        boolean exists = Files.exists(path2);
-        if (!overwrite && exists) {
+
+        FileSystem fileSystem = path.getFileSystem();
+
+        if (!overwrite && Files.exists(path2)) {
             throw new FileAlreadyExistsException("Target " + path2 + " exists and REPLACE_EXISTING not specified");
-        } else if (Files.isDirectory(path2) && !directoryIsEmpty(path2)) {
+        }
+        if (Files.isDirectory(path2) && !directoryIsEmpty(path2)) {
             throw new DirectoryNotEmptyException("Target not empty: " + path2);
         }
-        FileSystem fileSystem = path.getFileSystem();
         if (!fileSystem.equals(path2.getFileSystem())) {
-            throw new UnsupportedOperationException("Can not move file to a different GlusterFS volume");
+            throw new UnsupportedOperationException("Can not move file to a different file system");
         }
         GLFS.glfs_rename(((GlusterFileSystem) fileSystem).getVolptr(), ((GlusterPath) path).getString(), ((GlusterPath) path2).getString());
+    }
+
+    void guardFileExists(Path path) throws NoSuchFileException {
+        if (!Files.exists(path)) {
+            throw new NoSuchFileException(path.toString());
+        }
+    }
+
+    void guardAbsolutePath(Path p) {
+        if (!p.isAbsolute()) {
+            throw new UnsupportedOperationException("Relative paths not supported: " + p);
+        }
     }
 
     @Override
@@ -301,13 +333,9 @@ public class GlusterFileSystemProvider extends FileSystemProvider {
         if (!path.getFileSystem().equals(path2.getFileSystem())) { //if file system differs, then we don't need to check provider; we know the files differ
             return false;
         }
-        if (!Files.exists(path)) {
-            throw new NoSuchFileException(path.toString());
-        }
-        if (!Files.exists(path2)) {
-            throw new NoSuchFileException(path2.toString());
-        }
-        
+        guardFileExists(path);
+        guardFileExists(path2);
+
         stat stat1 = statPath(path);
         stat stat2 = statPath(path2);
         
