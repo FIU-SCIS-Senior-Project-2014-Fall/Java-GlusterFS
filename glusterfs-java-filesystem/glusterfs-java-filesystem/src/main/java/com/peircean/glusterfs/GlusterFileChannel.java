@@ -2,7 +2,6 @@ package com.peircean.glusterfs;
 
 import com.peircean.libgfapi_jni.internal.GLFS;
 import com.peircean.libgfapi_jni.internal.GlusterOpenOption;
-import com.peircean.libgfapi_jni.internal.UtilJNI;
 import com.peircean.libgfapi_jni.internal.structs.stat;
 import lombok.AccessLevel;
 import lombok.Data;
@@ -17,7 +16,10 @@ import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.nio.file.attribute.FileAttribute;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * @author <a href="http://about.me/louiszuckerman">Louis Zuckerman</a>
@@ -100,50 +102,19 @@ public class GlusterFileChannel extends FileChannel {
 		return 0;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 
-    @Override
-    public int write(ByteBuffer byteBuffer) throws IOException {
-        guardClosed();
-        byte[] buf = byteBuffer.array();
-        int written = GLFS.glfs_write(fileptr, buf, buf.length, 0);
-        if (written < 0) {
-            throw new IOException(UtilJNI.strerror());
-        }
-        position += written;
-        byteBuffer.position(written);
-        return written;
-    }
+	@Override
+	public int write(ByteBuffer byteBuffer) throws IOException {
+		guardClosed();
+		byte[] buf = byteBuffer.array();
+		int written = GLFS.glfs_write(fileptr, buf, buf.length, 0);
+		byteBuffer.position(written);
+		return written;
+	}
 
-    @Override
-    public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
-        guardClosed();
-        if (offset < 0 || offset > byteBuffers.length) {
-            throw new IndexOutOfBoundsException("Offset provided is invalid.");
-        }
-        if (length < 0 || length > byteBuffers.length - offset) {
-            throw new IndexOutOfBoundsException("Length provided is invalid");
-        }
-        if (!options.contains(StandardOpenOption.WRITE)) {
-            throw new NonWritableChannelException();
-        }
-
-        long totalWritten = 0L;
-
-        for (int i = offset; i < length + offset; i++) {
-            int remaining = byteBuffers[i].remaining();
-            while (remaining > 0) {
-                byte[] bytes = byteBuffers[i].array();
-                int written = GLFS.glfs_write(fileptr, bytes, remaining, 0);
-                if (written < 0) {
-                    throw new IOException();
-                }
-                position += written;
-                byteBuffers[i].position(written);
-                totalWritten += written;
-                remaining = byteBuffers[i].remaining();
-            }
-        }
-        return totalWritten;
-    }
+	@Override
+	public long write(ByteBuffer[] byteBuffers, int offset, int length) throws IOException {
+		return 0;
+	}
 
 	@Override
 	public long position() throws IOException {
@@ -208,33 +179,10 @@ public class GlusterFileChannel extends FileChannel {
 		return 0;  //To change body of implemented methods use File | Settings | File Templates.
 	}
 
-    @Override
-    public int write(ByteBuffer byteBuffer, long position) throws IOException {
-        guardClosed();
-        if (position < 0) {
-            throw new IllegalArgumentException();
-        }
-        if (!options.contains(StandardOpenOption.WRITE)) {
-            throw new NonWritableChannelException();
-        }
-        if (position >= size()) {
-            byte[] bytes = byteBuffer.array();
-            byte[] temp = Arrays.copyOf(bytes, bytes.length + (int) (position - size()));
-            byteBuffer = ByteBuffer.wrap(temp);
-        }
-        int whence = 0; //SEEK_SET
-        int seek = GLFS.glfs_lseek(fileptr, position, whence);
-        if (seek < 0) {
-            throw new IOException();
-        }
-        byte[] bytes = byteBuffer.array();
-        long written = GLFS.glfs_write(fileptr, bytes, bytes.length, 0);
-        seek = GLFS.glfs_lseek(fileptr, this.position, whence);
-        if (seek < 0) {
-            throw new IOException();
-        }
-        return (int) written;
-    }
+	@Override
+	public int write(ByteBuffer byteBuffer, long l) throws IOException {
+		return 0;  //To change body of implemented methods use File | Settings | File Templates.
+	}
 
 	@Override
 	public MappedByteBuffer map(MapMode mapMode, long l, long l2) throws IOException {
